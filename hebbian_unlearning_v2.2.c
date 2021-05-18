@@ -562,7 +562,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		max_stability_sampled /= N_samp;
 		min_stability_sampled /= N_samp;
 
-		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg \n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, max_stability_sampled, min_stability_sampled);
+		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d dream*strenght/N %Lg ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg \n", N_samp, N, alpha, strenghtN, D_maxstrenght, (t * delta_D), (double)(t * delta_D)*strenght, ave_stability_sampled, max_stability_sampled, min_stability_sampled);
 		fflush(fout3);
 	}
 
@@ -579,8 +579,8 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 			J_Sigma = J_Sigma + J_sigma[i][t] / (double)N_samp;
 			sigma_m = sigma_m + over[i][t] * over[i][t] / (double)N_samp;
 		}
-		fprintf(fout1, "%d\t%lf\t%lf\n", t * delta_D, m, sqrt((sigma_m - m * m) / (double)N_samp));
-		fprintf(fout2, "%d\t%lf\t%lf\n", t * delta_D, J_Av, J_Sigma);
+		fprintf(fout1, "%Lg\t%lf\t%lf\n", (double)(t * delta_D)*strenght, m, sqrt((sigma_m - m * m) / (double)N_samp));
+		fprintf(fout2, "%Lg\t%lf\t%lf\n", (double)(t * delta_D)*strenght, J_Av, J_Sigma);
 		fflush(fout1);
 		fflush(fout2);
 	}
