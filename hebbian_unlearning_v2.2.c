@@ -376,21 +376,24 @@ int main(int argc, char *argv[])
 
 	// Initialization of the output files
 
-	char string[100], string2[100], string3[100];
+	char string[100], string2[100], string3[100], string4[150];
 if(strcmp(NORM_TYPE, "NO_NORM")  == 0 ){
 	sprintf(string, "unlearningV2NONORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 	sprintf(string2, "unlearningV2NONORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 	sprintf(string3, "unlearningV2NONORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string4, "unlearningV2NONORM_stabilities_only_numbers_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else if(strcmp(NORM_TYPE, "ROW_NORM") == 0 ) {
 	sprintf(string, "unlearningV2ROWNORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string2, "unlearningV2ROWNORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string3, "unlearningV2ROWNORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+	sprintf(string4, "unlearningV2ROWNORM_stabilities_only_numbers_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else if(strcmp(NORM_TYPE, "TOT_NORM") == 0 ) {
 	sprintf(string, "unlearningV2TOT_NORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string2, "unlearningV2TOT_NORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string3, "unlearningV2TOT_NORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+	sprintf(string4, "unlearningV2TOT_NORM_stabilities_only_numbers_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1);}
 
@@ -400,8 +403,10 @@ else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1)
 	fout2 = fopen(string2, "w");
 	FILE *fout3;
 	fout3 = fopen(string3, "w"); //marco
+	FILE *fout4;
+	fout4 = fopen(string4, "w"); 
 
-fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
+	fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
 	//marco
 	long double ave_stability_sampled, min_stability_sampled, max_stability_sampled;
@@ -562,8 +567,11 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		max_stability_sampled /= N_samp;
 		min_stability_sampled /= N_samp;
 
-		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d dream*strenght/N %Lg ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg \n", N_samp, N, alpha, strenghtN, D_maxstrenght, (t * delta_D), (double)(t * delta_D)*strenght, ave_stability_sampled, max_stability_sampled, min_stability_sampled);
+		fprintf(fout3, "Samples\t%d\tN\t%d\talpha\t%Lg\tstrenghtN\t%Lg\tD_maxstrenght\t%Lg\tdream\t%d\tdream*strenght/N\t%Lg\tave_stability\t%Lg\tmax_stability_sampled\t%Lg\tmin_stability_sampled\t%Lg\n", N_samp, N, alpha, strenghtN, D_maxstrenght, (t * delta_D), (double)(t * delta_D)*strenght, ave_stability_sampled, max_stability_sampled, min_stability_sampled);
+		fprintf(fout4, "%d\t%d\t%Lg\t%Lg\t%Lg\t%d\t%Lg\t%Lg\t%Lg\t%Lg\n", N_samp, N, alpha, strenghtN, D_maxstrenght, (t * delta_D), (double)(t * delta_D)*strenght, ave_stability_sampled, max_stability_sampled, min_stability_sampled);
+
 		fflush(fout3);
+		fflush(fout4);
 	}
 
 	for (t = 0; t < (int)(D_max / delta_D); t++)
@@ -588,6 +596,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	fclose(fout1);
 	fclose(fout2);
 	fclose(fout3);
+	fclose(fout4);
 
 	return 0;
 }
