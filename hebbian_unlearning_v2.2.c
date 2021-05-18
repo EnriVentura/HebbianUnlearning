@@ -239,6 +239,16 @@ double overlap(int **csi, int *vec, int pattern)
 	return m;
 }
 
+double overlap_patterns(double **csi, int *sigma, int i, int mu){
+
+	double m = 0;
+	
+	for(int j = 0; j < N; j++){
+		m = m + (double)csi[mu][i]*csi[mu][j]*(double)sigma[i]*sigma[j]/(double)N;
+	}
+	return m;
+}
+
 void updateJ(double **J, int *sigma, double strenght)
 { //updates couplings according to Hebbian Unlearning
 	int i, j;
