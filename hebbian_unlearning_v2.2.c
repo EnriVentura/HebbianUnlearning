@@ -328,9 +328,6 @@ int main(int argc, char *argv[])
 	int D, delta_D = (int)(0.01 / strenght);
     int D_max = (int) (D_maxstrenght / strenght); 
  
-
-
-    //printf("D_max %d \n", D_max); POOP
 	// Initialization of the main configuration/interaction arrays
 
 	sigma = (int *)malloc(N * sizeof(int));
@@ -404,11 +401,18 @@ else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1)
 fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
 	//marco
-	long double ave_stability_sampled, min_stability_sampled, max_stability_sampled;
+	long double ave_stability_sampled, min_stability_sampled, max_stability_sampled, asymmetry_sampled, norm;
 	double **stability;
 	double **ave_stability;
 	double **max_stability;
 	double **min_stability;
+    double **asymm;
+
+    asymm = (double **)malloc(N_samp * sizeof(double *));
+    for (i = 0; i < P; i++){
+        asymm[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+    } 
+
 	stability = (double **)malloc(P * sizeof(double *));
 	for (i = 0; i < P; i++)
 	{
@@ -428,6 +432,13 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	for (i = 0; i < N_samp; i++)
 	{
 		min_stability[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+	}
+
+	if (asymm == NULL)
+	{
+		printf("malloc of asymmetry failed.\n");
+		fprintf(fout3, "malloc of asymmetry failed.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	if (stability == NULL)
@@ -474,7 +485,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				normalizeJ(NORM_TYPE,J);
 			}
 
-			if (D % delta_D == 0) //POOP
+			if (D % delta_D == 0)
 			{ //Check and measure
                // printf("D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d step%d \n", D_max, D_maxstrenght, strenght, delta_D, t);
                // printf("%d D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d totsteps %d step%d \n", (int)(1/0.001), D_max, D_maxstrenght, strenght, delta_D, (int)(D_max / delta_D), t);
@@ -530,8 +541,19 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 						}
 					}
 				}
-
 				ave_stability[i][t] /= (N * P);
+            
+            //marco computing asymmetry
+            asymm[i][t]=0;
+            norm=0;
+            for (int i=0; i<N; i++){
+                for (int j=0; j<N; j++){
+                    norm+=J[i][j]*J[i][j];
+                    asymm[i][t]+=J[i][j]*J[j][i];
+                } 
+            }
+            asymm[i][t]/=norm;
+
 
 				sigma_new = generate_initial(csi, initial_pattern);
 				async_dynamics(sigma_new, J);
@@ -544,27 +566,32 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 
 	// Analysis of the measures over the different samples
 
-	//marco: analize stabilities
+	//marco: analize stabilities and asymmetry
 	for (t = 0; t < (int)(D_max / delta_D); t++)
 	{
 		ave_stability_sampled = 0;
 		max_stability_sampled = 0;
 		min_stability_sampled = 0;
+        asymmetry_sampled = 0;
 
 		for (int i = 0; i < N_samp; i++)
 		{
 			ave_stability_sampled += ave_stability[i][t];
 			max_stability_sampled += max_stability[i][t];
 			min_stability_sampled += min_stability[i][t];
+            asymmetry_sampled += asymm[i][t];
 		}
 
 		ave_stability_sampled /= N_samp;
 		max_stability_sampled /= N_samp;
 		min_stability_sampled /= N_samp;
+        asymmetry_sampled /= N_samp;
 
-		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg \n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, max_stability_sampled, min_stability_sampled);
+		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg asymmetry_sampled %Lg \n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, max_stability_sampled, min_stability_sampled, asymmetry_sampled);
 		fflush(fout3);
 	}
+
+ 
 
 	for (t = 0; t < (int)(D_max / delta_D); t++)
 	{
@@ -579,8 +606,8 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 			J_Sigma = J_Sigma + J_sigma[i][t] / (double)N_samp;
 			sigma_m = sigma_m + over[i][t] * over[i][t] / (double)N_samp;
 		}
-		fprintf(fout1, "%d\t%lf\t%lf\n", t * delta_D, m, sqrt((sigma_m - m * m) / (double)N_samp));
-		fprintf(fout2, "%d\t%lf\t%lf\n", t * delta_D, J_Av, J_Sigma);
+		fprintf(fout1, "Dream %d m %lf sigma_m %lf\n", t * delta_D, m, sqrt((sigma_m - m * m) / (double)N_samp));
+		fprintf(fout2, "Dream %d mean_J %lf sigma_J %lf\n", t * delta_D, J_Av, J_Sigma);
 		fflush(fout1);
 		fflush(fout2);
 	}
