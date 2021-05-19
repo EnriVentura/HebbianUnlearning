@@ -401,12 +401,18 @@ else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1)
 fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
 	//marco
-	long double ave_stability_sampled, min_stability_sampled, max_stability_sampled, asymmetry_sampled, norm;
+	long double ave_stability_sampled, min_stability_sampled, max_stability_sampled, asymmetry_sampled, norm, n_sat_sampled, n_sat2_sampled;
 	double **stability;
 	double **ave_stability;
 	double **max_stability;
 	double **min_stability;
     double **asymm;
+	int **n_sat;
+
+    n_sat = (int **)malloc(N_samp * sizeof(int *));
+	for (i = 0; i < N_samp; i++){
+		n_sat[i] = (int *)malloc(((int)(D_max / delta_D)+1) * sizeof(int));
+	}
 
     asymm = (double **)malloc(N_samp * sizeof(double *));
     for (i = 0; i < P; i++){
@@ -432,6 +438,13 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	for (i = 0; i < N_samp; i++)
 	{
 		min_stability[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+	}
+
+	if (n_sat == NULL)
+	{
+		printf("malloc of n_sat failed.\n");
+		fprintf(fout3, "malloc of n_sat failed.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	if (asymm == NULL)
@@ -501,7 +514,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				}
 				J_sigma[i][t] = J_sigma[i][t] - J_av[i][t] * J_av[i][t];
 
-				//marco: computing stabilities
+				//marco: computing stabilities and n_sat
 				for (int mu = 0; mu < P; mu++)
 				{
 					for (int i = 0; i < N; i++)
@@ -525,6 +538,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				ave_stability[i][t] = 0;
 				max_stability[i][t] = stability[0][0];
 				min_stability[i][t] = stability[0][0];
+				n_sat[i][t] = 0;
 
 				for (int mu = 0; mu < P; mu++)
 				{
@@ -538,6 +552,10 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 						if (min_stability[i][t] > stability[mu][j])
 						{
 							min_stability[i][t] = stability[mu][j];
+						}
+						if (stability[mu][i] > 0)
+						{
+							n_sat[i][t]++;
 						}
 					}
 				}
@@ -566,13 +584,15 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 
 	// Analysis of the measures over the different samples
 
-	//marco: analize stabilities and asymmetry
+	//marco: analize stabilities and n_sat and asymmetry
 	for (t = 0; t < (int)(D_max / delta_D); t++)
 	{
 		ave_stability_sampled = 0;
 		max_stability_sampled = 0;
 		min_stability_sampled = 0;
         asymmetry_sampled = 0;
+		n_sat_sampled = 0;
+		n_sat2_sampled = 0;
 
 		for (int i = 0; i < N_samp; i++)
 		{
@@ -580,14 +600,18 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 			max_stability_sampled += max_stability[i][t];
 			min_stability_sampled += min_stability[i][t];
             asymmetry_sampled += asymm[i][t];
+			n_sat_sampled += n_sat[i][t];
+			n_sat2_sampled += n_sat[i][t]*n_sat[i][t];
 		}
 
 		ave_stability_sampled /= N_samp;
 		max_stability_sampled /= N_samp;
 		min_stability_sampled /= N_samp;
         asymmetry_sampled /= N_samp;
+		n_sat_sampled /= N_samp;
+		n_sat2_sampled /= N_samp;
 
-		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg asymmetry_sampled %Lg \n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, max_stability_sampled, min_stability_sampled, asymmetry_sampled);
+		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg asymmetry_sampled %Lg n_sat_sampled %Lg var_n_sat %Lg\n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, max_stability_sampled, min_stability_sampled, asymmetry_sampled, n_sat_sampled, n_sat2_sampled-n_sat_sampled*n_sat_sampled);
 		fflush(fout3);
 	}
 
