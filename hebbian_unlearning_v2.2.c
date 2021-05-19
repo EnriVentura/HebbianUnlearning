@@ -334,6 +334,9 @@ int main(int argc, char *argv[])
 	double m, sigma_m;
 	double **over;
 
+	double Overlap;
+	int N_samp_over = 10;
+
 	long double strenght = strenghtN / N;											   //marco
 	int D, delta_D = (int)(0.01 / strenght);
     int D_max = (int) (D_maxstrenght / strenght); 
@@ -587,9 +590,16 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
             }
             asymm[i][t]/=norm;
 
-				sigma_new = generate_initial(csi, initial_pattern);
-				async_dynamics(sigma_new, J);
-				over[i][t] = overlap(csi, sigma_new, initial_pattern);
+            	Overlap = 0;
+            	for(int l = 0; l < N_samp_over; l++){
+					sigma_new = generate_initial(csi, initial_pattern);
+					async_dynamics(sigma_new, J);
+					Overlap += overlap(csi, sigma_new, initial_pattern);
+				}
+				over[i][t] = Overlap/(double)N_samp_over;
+				
+
+
 				t++;
 			}
 		}
