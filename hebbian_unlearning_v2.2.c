@@ -337,6 +337,8 @@ int main(int argc, char *argv[])
 	double Overlap;
 	int N_samp_over = 10;
 
+	int N_samp_over_percept = 1000;
+
 	long double strenght = strenghtN / N;											   //marco
 	int D, delta_D = (int)(0.01 / strenght);
     int D_max = (int) (D_maxstrenght / strenght); 
@@ -420,7 +422,11 @@ else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1)
 	FILE *fout3;
 	fout3 = fopen(string3, "w"); //marco
 	FILE *fout4;
-	fout4 = fopen(string4, "w"); 
+	fout4 = fopen(string4, "w");
+	FILE *fout5;
+	fout5 = fopen(string5, "w");
+	FILE *fout6;
+	fout6 = fopen(string6, "w"); 
 
 fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
@@ -431,11 +437,12 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	double **max_stability;
 	double **min_stability;
     double **asymm;
-	int **n_sat;
+	double **n_sat;
+	double **over_SAT, **over_UNSAT, **over_TOT;
 
-    n_sat = (int **)malloc(N_samp * sizeof(int *));
+    n_sat = (double **)malloc(N_samp * sizeof(double *));
 	for (i = 0; i < N_samp; i++){
-		n_sat[i] = (int *)malloc(((int)(D_max / delta_D)+1) * sizeof(int));
+		n_sat[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
 	}
 
     asymm = (double **)malloc(N_samp * sizeof(double *));
@@ -462,6 +469,21 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	{
 		min_stability[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
 	}
+	over_SAT = (double **)malloc(3 * sizeof(double *));
+	for (i = 0; i < 3; i++)
+	{
+		over_SAT[i] = (double *)malloc(N_samp_over_percept * sizeof(double));
+	}
+	over_UNSAT = (double **)malloc(3 * sizeof(double *));
+	for (i = 0; i < 3; i++)
+	{
+		over_UNSAT[i] = (double *)malloc(N_samp_over_percept * sizeof(double));
+	}over_TOT = (double **)malloc(3 * sizeof(double *));
+	for (i = 0; i < 3; i++)
+	{
+		over_TOT[i] = (double *)malloc(N_samp_over_percept * sizeof(double));
+	}
+
 
 	if (n_sat == NULL)
 	{
@@ -499,6 +521,24 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	{
 		printf("malloc of min_stability failed.\n");
 		fprintf(fout3, "malloc of min_stability failed.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (over_SAT == NULL)
+	{
+		printf("malloc of over_SAT failed.\n");
+		fprintf(fout4, "malloc of n_sat failed.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (over_UNSAT == NULL)
+	{
+		printf("malloc of over_UNSAT failed.\n");
+		fprintf(fout5, "malloc of n_sat failed.\n");
+		exit(EXIT_FAILURE);
+	}
+	if (over_TOT == NULL)
+	{
+		printf("malloc of over_TOT failed.\n");
+		fprintf(fout6, "malloc of n_sat failed.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -583,6 +623,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 					}
 				}
 				ave_stability[i][t] /= (N * P);
+				n_sat[i][t] /= (N * P);
             
             //marco computing asymmetry
             asymm[i][t]=0;
