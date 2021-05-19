@@ -534,8 +534,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				{
 					for (int i = 0; i < N; i++)
 					{
-						for (int j = 0; j < N; j++)
-							stability[mu][i] = 0;
+						stability[mu][i] = 0;
 					}
 				}
 
@@ -568,7 +567,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 						{
 							min_stability[i][t] = stability[mu][j];
 						}
-						if (stability[mu][i] > 0)
+						if (stability[mu][j] > 0)
 						{
 							n_sat[i][t]++;
 						}
