@@ -568,7 +568,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
                // printf("D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d step%d \n", D_max, D_maxstrenght, strenght, delta_D, t);
                // printf("%d D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d totsteps %d step%d \n", (int)(1/0.001), D_max, D_maxstrenght, strenght, delta_D, (int)(D_max / delta_D), t);
 				
-				//printf("Deps/N = %Lg\n", D*strenght);
+				printf("Deps/N = %Lg\n", D*strenght);
 				J_av[i][t] = 0;
 				J_sigma[i][t] = 0;
 				for (l = 0; l < N; l++)
@@ -633,7 +633,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				ave_stability[i][t] /= (N * P);
 				n_sat[i][t] /= (N * P);
 
-				if(i == 0){												//Generate data for histograms at the 3 differents critical times
+				if(i < N_samp){												//Generate data for histograms at the 3 differents critical times
 					if(min_stability[i][t] >= 0){
 						flag_up++;
 						if(flag_up == 1){
