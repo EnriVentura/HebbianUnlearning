@@ -239,6 +239,16 @@ double overlap(int **csi, int *vec, int pattern)
 	return m;
 }
 
+double overlap_patterns(double **csi, int *sigma, int i, int mu){
+
+	double m = 0;
+	
+	for(int j = 0; j < N; j++){
+		m = m + (double)csi[mu][i]*csi[mu][j]*(double)sigma[i]*sigma[j]/(double)N;
+	}
+	return m;
+}
+
 void updateJ(double **J, int *sigma, double strenght)
 { //updates couplings according to Hebbian Unlearning
 	int i, j;
@@ -373,21 +383,24 @@ int main(int argc, char *argv[])
 
 	// Initialization of the output files
 
-	char string[100], string2[100], string3[100];
+	char string[100], string2[100], string3[100], string4[100];
 if(strcmp(NORM_TYPE, "NO_NORM")  == 0 ){
 	sprintf(string, "unlearningV2NONORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 	sprintf(string2, "unlearningV2NONORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 	sprintf(string3, "unlearningV2NONORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string4, "unlearningV2NONORM_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else if(strcmp(NORM_TYPE, "ROW_NORM") == 0 ) {
 	sprintf(string, "unlearningV2ROWNORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string2, "unlearningV2ROWNORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string3, "unlearningV2ROWNORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+	sprintf(string4, "unlearningV2ROWNORM_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else if(strcmp(NORM_TYPE, "TOT_NORM") == 0 ) {
 	sprintf(string, "unlearningV2TOT_NORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string2, "unlearningV2TOT_NORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string3, "unlearningV2TOT_NORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+	sprintf(string4, "unlearningV2TOTNORM_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1);}
 
@@ -397,6 +410,8 @@ else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1)
 	fout2 = fopen(string2, "w");
 	FILE *fout3;
 	fout3 = fopen(string3, "w"); //marco
+	FILE *fout4;
+	fout4 = fopen(string4, "w"); 
 
 fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
@@ -415,10 +430,9 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	}
 
     asymm = (double **)malloc(N_samp * sizeof(double *));
-    for (i = 0; i < P; i++){
+    for (i = 0; i < N_samp; i++){
         asymm[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
     } 
-
 	stability = (double **)malloc(P * sizeof(double *));
 	for (i = 0; i < P; i++)
 	{
@@ -498,6 +512,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				normalizeJ(NORM_TYPE,J);
 			}
 
+
 			if (D % delta_D == 0)
 			{ //Check and measure
                // printf("D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d step%d \n", D_max, D_maxstrenght, strenght, delta_D, t);
@@ -564,14 +579,14 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
             //marco computing asymmetry
             asymm[i][t]=0;
             norm=0;
-            for (int i=0; i<N; i++){
-                for (int j=0; j<N; j++){
-                    norm+=J[i][j]*J[i][j];
-                    asymm[i][t]+=J[i][j]*J[j][i];
+            int k;
+            for (k=0; k<N; k++){
+                for (j=k+1; j<N; j++){
+                    norm+=J[k][j]*J[k][j];
+                    asymm[i][t]+=J[k][j]*J[j][k];
                 } 
             }
             asymm[i][t]/=norm;
-
 
 				sigma_new = generate_initial(csi, initial_pattern);
 				async_dynamics(sigma_new, J);
@@ -594,7 +609,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		n_sat_sampled = 0;
 		n_sat2_sampled = 0;
 
-		for (int i = 0; i < N_samp; i++)
+		for (i = 0; i < N_samp; i++)
 		{
 			ave_stability_sampled += ave_stability[i][t];
 			max_stability_sampled += max_stability[i][t];
@@ -639,6 +654,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	fclose(fout1);
 	fclose(fout2);
 	fclose(fout3);
+	fclose(fout4);
 
 	return 0;
 }
