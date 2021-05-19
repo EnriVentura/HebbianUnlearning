@@ -419,7 +419,7 @@ else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1)
 fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
 	//marco
-	long double ave_stability_sampled, min_stability_sampled, max_stability_sampled, asymmetry_sampled, norm, n_sat_sampled, n_sat2_sampled;
+	long double ave_stability_sampled, ave_stability2_sampled, min_stability_sampled, min_stability2_sampled, max_stability_sampled, max_stability2_sampled, asymmetry_sampled, norm, n_sat_sampled, n_sat2_sampled;
 	double **stability;
 	double **ave_stability;
 	double **max_stability;
@@ -614,6 +614,9 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		ave_stability_sampled = 0;
 		max_stability_sampled = 0;
 		min_stability_sampled = 0;
+		ave_stability2_sampled = 0;
+		max_stability2_sampled = 0;
+		min_stability2_sampled = 0;
         asymmetry_sampled = 0;
 		n_sat_sampled = 0;
 		n_sat2_sampled = 0;
@@ -623,6 +626,9 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 			ave_stability_sampled += ave_stability[i][t];
 			max_stability_sampled += max_stability[i][t];
 			min_stability_sampled += min_stability[i][t];
+			ave_stability2_sampled += ave_stability[i][t]*ave_stability[i][t];
+			max_stability2_sampled += max_stability[i][t]*max_stability[i][t];
+			min_stability2_sampled += min_stability[i][t]*min_stability[i][t];
             asymmetry_sampled += asymm[i][t];
 			n_sat_sampled += n_sat[i][t];
 			n_sat2_sampled += n_sat[i][t]*n_sat[i][t];
@@ -631,11 +637,14 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		ave_stability_sampled /= N_samp;
 		max_stability_sampled /= N_samp;
 		min_stability_sampled /= N_samp;
+		ave_stability2_sampled /= N_samp;
+		max_stability2_sampled /= N_samp;
+		min_stability2_sampled /= N_samp;
         asymmetry_sampled /= N_samp;
 		n_sat_sampled /= N_samp;
 		n_sat2_sampled /= N_samp;
 
-		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg max_stability_sampled %Lg min_stability_sampled %Lg asymmetry_sampled %Lg n_sat_sampled %Lg var_n_sat %Lg\n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, max_stability_sampled, min_stability_sampled, asymmetry_sampled, n_sat_sampled, n_sat2_sampled-n_sat_sampled*n_sat_sampled);
+		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg sigma_ave_stability %lf max_stability_sampled %Lg sigma_max_stability %lf min_stability_sampled %Lg sigma_min_stability %lf asymmetry_sampled %Lg n_sat_sampled %Lg sigma_n_sat %lf\n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, sqrt((ave_stability2_sampled - ave_stability_sampled*ave_stability_sampled )/(double)N_samp), max_stability_sampled, sqrt((max_stability2_sampled - max_stability_sampled*max_stability_sampled )/(double)N_samp),min_stability_sampled, sqrt((min_stability2_sampled - min_stability_sampled*min_stability_sampled )/(double)N_samp),asymmetry_sampled, n_sat_sampled, sqrt((n_sat2_sampled-n_sat_sampled*n_sat_sampled)/(double)N_samp));
 		fflush(fout3);
 	}
 
