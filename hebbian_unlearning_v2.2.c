@@ -386,24 +386,30 @@ int main(int argc, char *argv[])
 
 	// Initialization of the output files
 
-	char string[100], string2[100], string3[100], string4[100];
+	char string[100], string2[100], string3[100], string4[150], string5[150], string6[150];
 if(strcmp(NORM_TYPE, "NO_NORM")  == 0 ){
 	sprintf(string, "unlearningV2NONORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 	sprintf(string2, "unlearningV2NONORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 	sprintf(string3, "unlearningV2NONORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-	sprintf(string4, "unlearningV2NONORM_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string4, "unlearningV2NONORM_overlapSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string5, "unlearningV2NONORM_overlapUNSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string6, "unlearningV2NONORM_overlapTOT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else if(strcmp(NORM_TYPE, "ROW_NORM") == 0 ) {
 	sprintf(string, "unlearningV2ROWNORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string2, "unlearningV2ROWNORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string3, "unlearningV2ROWNORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string4, "unlearningV2ROWNORM_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string4, "unlearningV2ROWNORM_overlapSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string5, "unlearningV2ROWNORM_overlapUNSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string6, "unlearningV2ROWNORM_overlapTOT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else if(strcmp(NORM_TYPE, "TOT_NORM") == 0 ) {
 	sprintf(string, "unlearningV2TOT_NORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string2, "unlearningV2TOT_NORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
 	sprintf(string3, "unlearningV2TOT_NORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string4, "unlearningV2TOTNORM_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string4, "unlearningV2TOT_NORM_overlapSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string5, "unlearningV2TOT_NORM_overlapUNSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
+	sprintf(string6, "unlearningV2TOT_NORM_overlapTOT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
 }
 else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1);}
 
