@@ -239,7 +239,7 @@ double overlap(int **csi, int *vec, int pattern)
 	return m;
 }
 
-double overlap_patterns(double **csi, int *sigma, int i, int mu){
+double overlap_patterns(int **csi, int *sigma, int i, int mu){
 
 	double m = 0;
 	
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 	N = atoi(argv[1]);
 	alpha = atof(argv[2]);
 	strenghtN = atof(argv[3]);
-	 D_maxstrenght = atof(argv[4]);
+	D_maxstrenght = atof(argv[4]);
 	NORM_TYPE = argv[5];
 	N_samp = atoi(argv[6]);
 
@@ -338,6 +338,8 @@ int main(int argc, char *argv[])
 	int N_samp_over = 10;
 
 	int N_samp_over_percept = 1000;
+	int index_min, index_max, mu_min, mu_max;
+	int flag_up, flag_down;
 
 	long double strenght = strenghtN / N;											   //marco
 	int D, delta_D = (int)(0.01 / strenght);
@@ -438,7 +440,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	double **min_stability;
     double **asymm;
 	double **n_sat;
-	double **over_SAT, **over_UNSAT, **over_TOT;
+	double **over_SAT, **over_UNSAT, **over_TOT; //over_TOT is not used
 
     n_sat = (double **)malloc(N_samp * sizeof(double *));
 	for (i = 0; i < N_samp; i++){
@@ -478,7 +480,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	for (i = 0; i < 3; i++)
 	{
 		over_UNSAT[i] = (double *)malloc(N_samp_over_percept * sizeof(double));
-	}over_TOT = (double **)malloc(3 * sizeof(double *));
+	}over_TOT = (double **)malloc(3 * sizeof(double *));							//over_TOT is not used
 	for (i = 0; i < 3; i++)
 	{
 		over_TOT[i] = (double *)malloc(N_samp_over_percept * sizeof(double));
@@ -550,6 +552,10 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		generate_J(P, csi, J);
 
 		int t = 0;
+		int r = 0;
+		flag_up = 0;
+		flag_down = 0;
+		
 		for (D = 0; D < D_max; D++)
 		{ //Dreaming..
 
@@ -611,10 +617,14 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 						if (max_stability[i][t] < stability[mu][j])
 						{
 							max_stability[i][t] = stability[mu][j];
+							index_max = j;
+							mu_max = mu;
 						}
 						if (min_stability[i][t] > stability[mu][j])
 						{
 							min_stability[i][t] = stability[mu][j];
+							index_min = j;
+							mu_min = mu;
 						}
 						if (stability[mu][j] > 0)
 						{
@@ -622,8 +632,29 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 						}
 					}
 				}
+
 				ave_stability[i][t] /= (N * P);
 				n_sat[i][t] /= (N * P);
+
+				if(min_stability[i][t] >= 0){
+					flag_up++;
+				}
+				if(flag_up !=0 && min_stability[i][t] <= 0){
+					flag_down++;
+				}
+
+				if(i == 0){
+					if(t == 0 || flag_up == 1 || flag_down == 1){
+						for(int l = 0; l < N_samp_over_percept; l++){
+							sigma_new = generate_rand_initial();
+							async_dynamics(sigma_new, J);
+							over_SAT[r][l] = overlap_patterns(csi, sigma_new, index_max, mu_max);
+							over_UNSAT[r][l] = overlap_patterns(csi, sigma_new, index_max, mu_max);
+						}
+					
+					}
+					r++;
+				}
             
             //marco computing asymmetry
             asymm[i][t]=0;
