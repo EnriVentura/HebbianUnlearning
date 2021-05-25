@@ -10,9 +10,11 @@
 #define EQ 20
 #define T_MAX 1000000
 
-char * NORM_TYPE;
+char *NORM_TYPE;
 int N, N_samp;
 long double alpha, strenghtN, D_maxstrenght;
+
+int myoverlap;
 
 void generate_csi(int P, int **csi)
 { //generate memories as a bernoulli process with probability p
@@ -239,12 +241,14 @@ double overlap(int **csi, int *vec, int pattern)
 	return m;
 }
 
-double overlap_patterns(int **csi, int *sigma, int i, int mu){
+int overlap_patterns(int **csi, int *sigma, int i, int mu)
+{ //marco: this now returns unnormaized overlaps
 
-	double m = 0;
-	
-	for(int j = 0; j < N; j++){
-		m = m + (double)csi[mu][i]*csi[mu][j]*(double)sigma[i]*sigma[j]/(double)N;
+	int m = 0;
+
+	for (int j = 0; j < N; j++)
+	{
+		m += csi[mu][i] * csi[mu][j] * sigma[i] * sigma[j];
 	}
 	return m;
 }
@@ -263,9 +267,9 @@ void updateJ(double **J, int *sigma, double strenght)
 }
 
 //marco
-void normalizeJ(char* type_of_norm, double **J)
+void normalizeJ(char *type_of_norm, double **J)
 { //updates couplings according to Hebbian Unlearning
-	if (strcmp(type_of_norm , "NO_NORM") == 0)
+	if (strcmp(type_of_norm, "NO_NORM") == 0)
 	{
 	}
 	if (strcmp(type_of_norm, "ROW_NORM") == 0)
@@ -337,17 +341,17 @@ int main(int argc, char *argv[])
 	double Overlap;
 	int N_samp_over = 10;
 
-	int N_samp_over_percept = 1000;
+	int N_samp_over_percept = 10;
 	int index_min, index_max, mu_min, mu_max;
 	int flag_up, flag_down, histo_times[4];
 	histo_times[0] = 0;
 	histo_times[1] = 0;
 	histo_times[2] = 0;
 
-	long double strenght = strenghtN / N;											   //marco
+	long double strenght = strenghtN / N; //marco
 	int D, delta_D = (int)(0.01 / strenght);
-    int D_max = (int) (D_maxstrenght / strenght); 
- 
+	int D_max = (int)(D_maxstrenght / strenght);
+
 	// Initialization of the main configuration/interaction arrays
 
 	sigma = (int *)malloc(N * sizeof(int));
@@ -368,9 +372,9 @@ int main(int argc, char *argv[])
 	}
 	for (i = 0; i < N_samp; i++)
 	{
-		over[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
-		J_av[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
-		J_sigma[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+		over[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
+		J_av[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
+		J_sigma[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
 	}
 
 	if (J == NULL)
@@ -394,28 +398,32 @@ int main(int argc, char *argv[])
 	// Initialization of the output files
 
 	char string[100], string2[100], string3[100], string4[150], string5[150];
-if(strcmp(NORM_TYPE, "NO_NORM")  == 0 ){
-	sprintf(string, "unlearningV2NONORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-	sprintf(string2, "unlearningV2NONORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-	sprintf(string3, "unlearningV2NONORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-	sprintf(string4, "unlearningV2NONORM_overlapSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-	sprintf(string5, "unlearningV2NONORM_overlapUNSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-}
-else if(strcmp(NORM_TYPE, "ROW_NORM") == 0 ) {
-	sprintf(string, "unlearningV2ROWNORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string2, "unlearningV2ROWNORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string3, "unlearningV2ROWNORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string4, "unlearningV2ROWNORM_overlapSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-	sprintf(string5, "unlearningV2ROWNORM_overlapUNSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-}
-else if(strcmp(NORM_TYPE, "TOT_NORM") == 0 ) {
-	sprintf(string, "unlearningV2TOT_NORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string2, "unlearningV2TOT_NORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string3, "unlearningV2TOT_NORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
-	sprintf(string4, "unlearningV2TOT_NORM_overlapSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-	sprintf(string5, "unlearningV2TOT_NORM_overlapUNSAT_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN , seed);
-}
-else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1);}
+	if (strcmp(NORM_TYPE, "NO_NORM") == 0)
+	{
+		sprintf(string, "unlearningV2NONORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string2, "unlearningV2NONORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string3, "unlearningV2NONORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string4, "unlearningV2NONORM_perceptron_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+	}
+	else if (strcmp(NORM_TYPE, "ROW_NORM") == 0)
+	{
+		sprintf(string, "unlearningV2ROWNORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string2, "unlearningV2ROWNORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string3, "unlearningV2ROWNORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string4, "unlearningV2ROWNORM_perceptron_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+	}
+	else if (strcmp(NORM_TYPE, "TOT_NORM") == 0)
+	{
+		sprintf(string, "unlearningV2TOT_NORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string2, "unlearningV2TOT_NORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string3, "unlearningV2TOT_NORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+		sprintf(string4, "unlearningV2TOT_NORM_perceptron_overlap_histo_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, seed);
+	}
+	else
+	{
+		printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM ");
+		exit(1);
+	}
 
 	FILE *fout1;
 	fout1 = fopen(string, "w");
@@ -425,10 +433,8 @@ else{printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM "); exit (1)
 	fout3 = fopen(string3, "w"); //marco
 	FILE *fout4;
 	fout4 = fopen(string4, "w");
-	FILE *fout5;
-	fout5 = fopen(string5, "w");
 
-fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
+	fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
 	//marco
 	long double ave_stability_sampled, ave_stability2_sampled, min_stability_sampled, min_stability2_sampled, max_stability_sampled, max_stability2_sampled, asymmetry_sampled, norm, n_sat_sampled, n_sat2_sampled;
@@ -436,19 +442,21 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	double **ave_stability;
 	double **max_stability;
 	double **min_stability;
-    double **asymm;
+	double **asymm;
 	double **n_sat;
-	double **over_SAT, **over_UNSAT; 
+	int **over_SAT, **over_UNSAT;
 
-    n_sat = (double **)malloc(N_samp * sizeof(double *));
-	for (i = 0; i < N_samp; i++){
-		n_sat[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+	n_sat = (double **)malloc(N_samp * sizeof(double *));
+	for (i = 0; i < N_samp; i++)
+	{
+		n_sat[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
 	}
 
-    asymm = (double **)malloc(N_samp * sizeof(double *));
-    for (i = 0; i < N_samp; i++){
-        asymm[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
-    } 
+	asymm = (double **)malloc(N_samp * sizeof(double *));
+	for (i = 0; i < N_samp; i++)
+	{
+		asymm[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
+	}
 	stability = (double **)malloc(P * sizeof(double *));
 	for (i = 0; i < P; i++)
 	{
@@ -457,27 +465,27 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	ave_stability = (double **)malloc(N_samp * sizeof(double *));
 	for (i = 0; i < N_samp; i++)
 	{
-		ave_stability[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+		ave_stability[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
 	}
 	max_stability = (double **)malloc(N_samp * sizeof(double *));
 	for (i = 0; i < N_samp; i++)
 	{
-		max_stability[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+		max_stability[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
 	}
 	min_stability = (double **)malloc(N_samp * sizeof(double *));
 	for (i = 0; i < N_samp; i++)
 	{
-		min_stability[i] = (double *)malloc(((int)(D_max / delta_D)+1) * sizeof(double));
+		min_stability[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
 	}
-	over_SAT = (double **)malloc(3 * sizeof(double *));
+	over_SAT = (int **)malloc(3 * sizeof(int *));
 	for (i = 0; i < 3; i++)
 	{
-		over_SAT[i] = (double *)malloc(N_samp_over_percept*N_samp*sizeof(double));
+		over_SAT[i] = (int *)malloc((N + 1) * sizeof(int));
 	}
-	over_UNSAT = (double **)malloc(3 * sizeof(double *));
+	over_UNSAT = (int **)malloc(3 * sizeof(int *));
 	for (i = 0; i < 3; i++)
 	{
-		over_UNSAT[i] = (double *)malloc(N_samp_over_percept*N_samp*sizeof(double));
+		over_UNSAT[i] = (int *)malloc((N + 1) * sizeof(int));
 	}
 
 	if (n_sat == NULL)
@@ -521,23 +529,24 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 	if (over_SAT == NULL)
 	{
 		printf("malloc of over_SAT failed.\n");
-		fprintf(fout4, "malloc of n_sat failed.\n");
+		fprintf(fout4, "malloc of over_SAT failed.\n");
 		exit(EXIT_FAILURE);
 	}
 	if (over_UNSAT == NULL)
 	{
 		printf("malloc of over_UNSAT failed.\n");
-		fprintf(fout5, "malloc of n_sat failed.\n");
+		fprintf(fout4, "malloc of over_UNSAT failed.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	for(int i = 0; i < 3; i++){
-		for(int j = 0; j < N_samp_over_percept*N_samp; j++){
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < (N + 1); j++)
+		{
 			over_SAT[i][j] = 0;
 			over_UNSAT[i][j] = 0;
 		}
 	}
-
 
 	for (i = 0; i < N_samp; i++)
 	{ //Repetition of the run over N_samp realizations of disorder
@@ -550,7 +559,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		int r = 0;
 		flag_up = 0;
 		flag_down = 0;
-		
+
 		for (D = 0; D < D_max; D++)
 		{ //Dreaming..
 
@@ -559,16 +568,15 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				sigma = generate_rand_initial();
 				async_dynamics(sigma, J);
 				updateJ(J, sigma, strenght);
-				normalizeJ(NORM_TYPE,J);
+				normalizeJ(NORM_TYPE, J);
 			}
-
 
 			if (D % delta_D == 0)
 			{ //Check and measure
-               // printf("D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d step%d \n", D_max, D_maxstrenght, strenght, delta_D, t);
-               // printf("%d D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d totsteps %d step%d \n", (int)(1/0.001), D_max, D_maxstrenght, strenght, delta_D, (int)(D_max / delta_D), t);
-				
-				printf("Deps/N = %Lg\n", D*strenght);
+				// printf("D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d step%d \n", D_max, D_maxstrenght, strenght, delta_D, t);
+				// printf("%d D_max %d D_maxstrenght %Lg strenght %Lg deltaD %d totsteps %d step%d \n", (int)(1/0.001), D_max, D_maxstrenght, strenght, delta_D, (int)(D_max / delta_D), t);
+
+				//printf("Deps/N = %Lg\n", D*strenght); //test
 				J_av[i][t] = 0;
 				J_sigma[i][t] = 0;
 				for (l = 0; l < N; l++)
@@ -633,57 +641,75 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 				ave_stability[i][t] /= (N * P);
 				n_sat[i][t] /= (N * P);
 
-				if(i < N_samp){												//Generate data for histograms at the 3 differents critical times
-					if(min_stability[i][t] >= 0){
-						flag_up++;
-						if(flag_up == 1){
-							histo_times[1] = t;
-							//printf("time_1 = %Lg\n", D*strenght);
-						}
-					}
-					if(flag_up > 5 && min_stability[i][t] <= 0){
-						flag_down++;
-						if(flag_down == 1){
-							histo_times[2] = t;
-							//printf("time_2 = %Lg\n", D*strenght);
-						}
-					}
-					if(t == 0 || flag_up == 1 || flag_down == 1 && r < 3){
-						r++;
-						for(int l = N_samp_over_percept*i; l < N_samp_over_percept*(i+1); l++){
-							sigma_new = generate_rand_initial();
-							async_dynamics(sigma_new, J);
-							over_SAT[r-1][l] = overlap_patterns(csi, sigma_new, index_max, mu_max);
-							over_UNSAT[r-1][l] = overlap_patterns(csi, sigma_new, index_min, mu_min);
-						}
-						
-						//printf("r = %d\n", r);
-					
+				//filling histos: CARE average times are non normalized here
+				if (t == 0)
+				{
+					for (int l = 0; l < N_samp_over_percept; l++)
+					{
+						sigma_new = generate_rand_initial();
+						async_dynamics(sigma_new, J);
+						over_SAT[0][(overlap_patterns(csi, sigma_new, index_max, mu_max) + N) / 2]++;
+						over_UNSAT[0][(overlap_patterns(csi, sigma_new, index_min, mu_min) + N) / 2]++;
 					}
 				}
-            
-            //marco computing asymmetry
-            asymm[i][t]=0;
-            norm=0;
-            int k;
-            for (k=0; k<N; k++){
-                for (j=k+1; j<N; j++){
-                    norm+=J[k][j]*J[k][j];
-                    asymm[i][t]+=J[k][j]*J[j][k];
-                } 
-            }
-            asymm[i][t]/=norm;
 
-            	Overlap = 0;
-            	for(int l = 0; l < N_samp_over; l++){
+				if (t != 0 && min_stability[i][t] >= 0)
+				{
+					if (flag_up < 1)
+					{
+						histo_times[1] += t;
+						//printf("time_1 = %Lg\n", D * strenght); //test
+						for (int l = 0; l < N_samp_over_percept; l++)
+						{
+							sigma_new = generate_rand_initial();
+							async_dynamics(sigma_new, J);
+							over_SAT[1][(overlap_patterns(csi, sigma_new, index_max, mu_max) + N) / 2]++;
+							over_UNSAT[1][(overlap_patterns(csi, sigma_new, index_min, mu_min) + N) / 2]++;
+						}
+					}
+					flag_up++;
+				}
+
+				if (flag_up > 5 && min_stability[i][t] < 0)
+				{
+					if (flag_down < 1)
+					{
+						histo_times[2] += t;
+						//printf("time_2 = %Lg %d \n", D * strenght, flag_down); //test
+						for (int l = 0; l < N_samp_over_percept; l++)
+						{
+							sigma_new = generate_rand_initial();
+							async_dynamics(sigma_new, J);
+							over_SAT[2][(overlap_patterns(csi, sigma_new, index_max, mu_max) + N) / 2]++;
+							over_UNSAT[2][(overlap_patterns(csi, sigma_new, index_min, mu_min) + N) / 2]++;
+						}
+					}
+					flag_down++;
+				}
+
+				//marco computing asymmetry
+				asymm[i][t] = 0;
+				norm = 0;
+				int k;
+				for (k = 0; k < N; k++)
+				{
+					for (j = k + 1; j < N; j++)
+					{
+						norm += J[k][j] * J[k][j];
+						asymm[i][t] += J[k][j] * J[j][k];
+					}
+				}
+				asymm[i][t] /= norm;
+
+				Overlap = 0;
+				for (int l = 0; l < N_samp_over; l++)
+				{
 					sigma_new = generate_initial(csi, initial_pattern);
 					async_dynamics(sigma_new, J);
 					Overlap += overlap(csi, sigma_new, initial_pattern);
 				}
-				over[i][t] = Overlap/(double)N_samp_over;
+				over[i][t] = Overlap / (double)N_samp_over;
 				
-
-
 				t++;
 			}
 		}
@@ -732,9 +758,7 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		fflush(fout3);
 	}
 
- 
-
-	for (t = 0; t < (int)(D_max / delta_D); t++)
+		for (t = 0; t < (int)(D_max / delta_D); t++)
 	{
 		m = 0;
 		J_Av = 0;
@@ -753,26 +777,32 @@ fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg 
 		fflush(fout2);
 	}
 
-	for(int i = 0; i < 3; i++){
-		fprintf(fout4, "%Lg\t", (long double)(histo_times[i]*delta_D)*strenght);
-		fprintf(fout5, "%Lg\t", (long double)(histo_times[i]*delta_D)*strenght);
-		for(int l = 0; l < N_samp_over_percept*N_samp; l++){
-			fprintf(fout4, "%lf\t", over_SAT[i][l]);
-			fprintf(fout5, "%lf\t", over_UNSAT[i][l]);
-			fflush(fout4);
-			fflush(fout5);
-		}
-		fprintf(fout4, "\n");
-		fprintf(fout5, "\n");
+	//marco:printing histograms
+	for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
+	if(over_SAT[0][myoverlap]!=0){fprintf(fout4, "N %d At_time 0 over %d samples perceptron_overlap_SAT %d counter %d\n",N, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[0][myoverlap]);}
+}
+for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
+	if(over_UNSAT[0][myoverlap]!=0){fprintf(fout4, "N %d At_time 0 over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[0][myoverlap]);}
+}
 
-	}
+for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
+	if(over_SAT[1][myoverlap]!=0){fprintf(fout4, "N %d ave_t_min %d over %d samples perceptron_overlap_SAT %d counter %d\n",N, histo_times[1]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[1][myoverlap]);}
+}
+for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
+	if(over_UNSAT[1][myoverlap]!=0){fprintf(fout4, "N %d ave_t_min %d over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, histo_times[1]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[1][myoverlap]);}
+}
+
+for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
+	if(over_SAT[2][myoverlap]!=0){fprintf(fout4, "N %d ave_t_max %d over %d samples perceptron_overlap_SAT %d counter %d\n",N, histo_times[2]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[2][myoverlap]);}
+}
+for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
+	if(over_UNSAT[2][myoverlap]!=0){fprintf(fout4, "N %d ave_t_max %d over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, histo_times[2]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[2][myoverlap]);}
+}
 
 	fclose(fout1);
 	fclose(fout2);
 	fclose(fout3);
 	fclose(fout4);
-	fclose(fout5);
-
 
 	return 0;
 }
