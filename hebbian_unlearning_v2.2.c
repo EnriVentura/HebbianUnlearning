@@ -782,23 +782,22 @@ int main(int argc, char *argv[])
 	if(over_SAT[0][myoverlap]!=0){fprintf(fout4, "N %d At_time 0 over %d samples perceptron_overlap_SAT %d counter %d\n",N, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[0][myoverlap]);}
 }
 for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
-	if(over_UNSAT[0][myoverlap]!=0){fprintf(fout4, "N %d At_time 0 over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[0][myoverlap]);}
+	if(over_UNSAT[0][myoverlap]!=0){fprintf(fout4, "N %d delta_D %d strenght %Lg At_time 0 over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, delta_D, strenght, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[0][myoverlap]);}
 }
 
 for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
-	if(over_SAT[1][myoverlap]!=0){fprintf(fout4, "N %d ave_t_min %d over %d samples perceptron_overlap_SAT %d counter %d\n",N, histo_times[1]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[1][myoverlap]);}
+	if(over_SAT[1][myoverlap]!=0){fprintf(fout4, "N %d delta_D %d strenght %Lg ave_t_min %Lg over %d samples perceptron_overlap_SAT %d counter %d\n",N, delta_D, strenght,(long double) histo_times[1]*delta_D*strenght/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[1][myoverlap]);}
 }
 for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
-	if(over_UNSAT[1][myoverlap]!=0){fprintf(fout4, "N %d ave_t_min %d over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, histo_times[1]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[1][myoverlap]);}
+	if(over_UNSAT[1][myoverlap]!=0){fprintf(fout4, "N %d delta_D %d strenght %Lg ave_t_min %Lg over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, delta_D, strenght,(long double) histo_times[1]*delta_D*strenght/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[1][myoverlap]);}
 }
 
 for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
-	if(over_SAT[2][myoverlap]!=0){fprintf(fout4, "N %d ave_t_max %d over %d samples perceptron_overlap_SAT %d counter %d\n",N, histo_times[2]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[2][myoverlap]);}
+	if(over_SAT[2][myoverlap]!=0){fprintf(fout4, "N %d delta_D %d strenght %Lg ave_t_max %Lg over %d samples perceptron_overlap_SAT %d counter %d\n",N, delta_D, strenght,(long double) histo_times[2]*delta_D*strenght/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_SAT[2][myoverlap]);}
 }
 for(int myoverlap=0; myoverlap<(N+1); myoverlap++){
-	if(over_UNSAT[2][myoverlap]!=0){fprintf(fout4, "N %d ave_t_max %d over %d samples perceptron_overlap_UNSAT %d counter %d\n",N, histo_times[2]/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[2][myoverlap]);}
+	if(over_UNSAT[2][myoverlap]!=0){fprintf(fout4, "N %d delta_D %d strenght %Lg ave_t_max %Lg over %d samples perceptron_overlap_UNSAT %d counter %d\n",N,delta_D, strenght,(long double) histo_times[2]*delta_D*strenght/N_samp, N_samp*N_samp_over_percept,myoverlap*2-N,over_UNSAT[2][myoverlap]);}
 }
-
 	fclose(fout1);
 	fclose(fout2);
 	fclose(fout3);
