@@ -176,7 +176,7 @@ int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
 	return time;
 }
 
-void async_dynamics(int *sigma, double **J)
+int async_dynamics(int *sigma, double **J)
 { //runs asyncronous hopfield dynamics until convergence
 
 	int i, j, k, flag = 0, time = 0, count;
@@ -223,9 +223,10 @@ void async_dynamics(int *sigma, double **J)
 
 		sigma[i] = sigma_new[i];
 
-		//time++;
+		time++;
 		//printf("time = %d\n", time);
 	}
+	return time;
 }
 
 double overlap(int **csi, int *vec, int pattern)
@@ -352,6 +353,8 @@ int main(int argc, char *argv[])
 	int D, delta_D = (int)(0.01 / strenght);
 	int D_max = (int)(D_maxstrenght / strenght);
 
+	int time_supp; //supporting time variable for async routine
+
 	// Initialization of the main configuration/interaction arrays
 
 	sigma = (int *)malloc(N * sizeof(int));
@@ -445,6 +448,8 @@ int main(int argc, char *argv[])
 	double **asymm;
 	double **n_sat;
 	int **over_SAT, **over_UNSAT;
+	int **Steps;
+	double **Phys_Time;
 
 	n_sat = (double **)malloc(N_samp * sizeof(double *));
 	for (i = 0; i < N_samp; i++)
@@ -487,6 +492,17 @@ int main(int argc, char *argv[])
 	{
 		over_UNSAT[i] = (int *)malloc((N + 1) * sizeof(int));
 	}
+	Steps = (int **)malloc(N_samp * sizeof(int *));
+	for (i = 0; i < N_samp; i++)
+	{
+		Steps[i] = (int *)malloc(((int)(D_max / delta_D) + 1) * sizeof(int));
+	}
+	Phys_Time = (double **)malloc(N_samp * sizeof(double *));
+	for (i = 0; i < N_samp; i++)
+	{
+		Phys_Time[i] = (double *)malloc(((int)(D_max / delta_D) + 1) * sizeof(double));
+	}
+
 
 	if (n_sat == NULL)
 	{
@@ -538,6 +554,19 @@ int main(int argc, char *argv[])
 		fprintf(fout4, "malloc of over_UNSAT failed.\n");
 		exit(EXIT_FAILURE);
 	}
+	if (Steps == NULL)
+	{
+		printf("malloc of Steps failed.\n");
+		fprintf(fout4, "malloc of Steps failed.\n");
+		
+		exit(EXIT_FAILURE);
+	}
+	if (Phys_Time == NULL)
+	{
+		printf("malloc of Phys_Time failed.\n");
+		fprintf(fout4, "malloc of Phys_Time failed.\n");
+	}
+		
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -566,7 +595,13 @@ int main(int argc, char *argv[])
 			if (D > 0)
 			{
 				sigma = generate_rand_initial();
-				async_dynamics(sigma, J);
+				
+				if(D % delta_D == 0){
+					Steps[i][t] = async_dynamics(sigma, J);
+				}else{
+					time_supp = async_dynamics(sigma, J);
+				}
+				
 				updateJ(J, sigma, strenght);
 				normalizeJ(NORM_TYPE, J);
 			}
@@ -647,7 +682,7 @@ int main(int argc, char *argv[])
 					for (int l = 0; l < N_samp_over_percept; l++)
 					{
 						sigma_new = generate_rand_initial();
-						async_dynamics(sigma_new, J);
+						time_supp = async_dynamics(sigma_new, J);
 						over_SAT[0][(overlap_patterns(csi, sigma_new, index_max, mu_max) + N) / 2]++;
 						over_UNSAT[0][(overlap_patterns(csi, sigma_new, index_min, mu_min) + N) / 2]++;
 					}
@@ -662,7 +697,7 @@ int main(int argc, char *argv[])
 						for (int l = 0; l < N_samp_over_percept; l++)
 						{
 							sigma_new = generate_rand_initial();
-							async_dynamics(sigma_new, J);
+							time_supp = async_dynamics(sigma_new, J);
 							over_SAT[1][(overlap_patterns(csi, sigma_new, index_max, mu_max) + N) / 2]++;
 							over_UNSAT[1][(overlap_patterns(csi, sigma_new, index_min, mu_min) + N) / 2]++;
 						}
@@ -679,7 +714,7 @@ int main(int argc, char *argv[])
 						for (int l = 0; l < N_samp_over_percept; l++)
 						{
 							sigma_new = generate_rand_initial();
-							async_dynamics(sigma_new, J);
+							time_supp = async_dynamics(sigma_new, J);
 							over_SAT[2][(overlap_patterns(csi, sigma_new, index_max, mu_max) + N) / 2]++;
 							over_UNSAT[2][(overlap_patterns(csi, sigma_new, index_min, mu_min) + N) / 2]++;
 						}
@@ -705,7 +740,7 @@ int main(int argc, char *argv[])
 				for (int l = 0; l < N_samp_over; l++)
 				{
 					sigma_new = generate_initial(csi, initial_pattern);
-					async_dynamics(sigma_new, J);
+					time_supp = async_dynamics(sigma_new, J);
 					Overlap += overlap(csi, sigma_new, initial_pattern);
 				}
 				over[i][t] = Overlap / (double)N_samp_over;
