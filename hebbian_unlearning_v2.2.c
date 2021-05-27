@@ -440,7 +440,7 @@ int main(int argc, char *argv[])
 	fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
 	//marco
-	long double ave_stability_sampled, ave_stability2_sampled, min_stability_sampled, min_stability2_sampled, max_stability_sampled, max_stability2_sampled, asymmetry_sampled, norm, n_sat_sampled, n_sat2_sampled;
+	long double ave_stability_sampled, ave_stability2_sampled, min_stability_sampled, min_stability2_sampled, max_stability_sampled, max_stability2_sampled, asymmetry_sampled, norm, n_sat_sampled, n_sat2_sampled, steps_sampled, steps2_sampled, phys_time_sampled, phys_time2_sampled;
 	double **stability;
 	double **ave_stability;
 	double **max_stability;
@@ -594,15 +594,20 @@ int main(int argc, char *argv[])
 
 			if (D > 0)
 			{
-				sigma = generate_rand_initial();
 				
 				if(D % delta_D == 0){
+					clock_t start = clock();
+					sigma = generate_rand_initial();
 					Steps[i][t] = async_dynamics(sigma, J);
+					updateJ(J, sigma, strenght);
+					clock_t end = clock();
+					Phys_Time[i][t] = (double)(end - start) / CLOCKS_PER_SEC;
 				}else{
+					sigma = generate_rand_initial();
 					time_supp = async_dynamics(sigma, J);
+					updateJ(J, sigma, strenght);
 				}
 				
-				updateJ(J, sigma, strenght);
 				normalizeJ(NORM_TYPE, J);
 			}
 
@@ -765,6 +770,10 @@ int main(int argc, char *argv[])
         asymmetry_sampled = 0;
 		n_sat_sampled = 0;
 		n_sat2_sampled = 0;
+		steps_sampled = 0;
+		steps2_sampled = 0;
+		phys_time_sampled = 0;
+		phys_time2_sampled = 0;
 
 		for (i = 0; i < N_samp; i++)
 		{
@@ -777,6 +786,11 @@ int main(int argc, char *argv[])
             asymmetry_sampled += asymm[i][t];
 			n_sat_sampled += n_sat[i][t];
 			n_sat2_sampled += n_sat[i][t]*n_sat[i][t];
+			steps_sampled += Steps[i][t];
+			steps2_sampled += Steps[i][t]*Steps[i][t];
+			phys_time_sampled += Phys_Time[i][t];
+			phys_time2_sampled += Phys_Time[i][t]*Phys_Time[i][t];
+
 		}
 
 		ave_stability_sampled /= N_samp;
@@ -788,8 +802,12 @@ int main(int argc, char *argv[])
         asymmetry_sampled /= N_samp;
 		n_sat_sampled /= N_samp;
 		n_sat2_sampled /= N_samp;
+		steps_sampled /= N_samp;
+		steps2_sampled /= N_samp;
+		phys_time_sampled /= N_samp;
+		phys_time2_sampled /= N_samp;
 
-		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg sigma_ave_stability %lf max_stability_sampled %Lg sigma_max_stability %lf min_stability_sampled %Lg sigma_min_stability %lf asymmetry_sampled %Lg n_sat_sampled %Lg sigma_n_sat %lf\n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, sqrt((ave_stability2_sampled - ave_stability_sampled*ave_stability_sampled )/(double)N_samp), max_stability_sampled, sqrt((max_stability2_sampled - max_stability_sampled*max_stability_sampled )/(double)N_samp),min_stability_sampled, sqrt((min_stability2_sampled - min_stability_sampled*min_stability_sampled )/(double)N_samp),asymmetry_sampled, n_sat_sampled, sqrt((n_sat2_sampled-n_sat_sampled*n_sat_sampled)/(double)N_samp));
+		fprintf(fout3, "Samples %d N %d alpha %Lg strenghtN %Lg D_maxstrenght %Lg dream %d ave_stability %Lg sigma_ave_stability %lf max_stability_sampled %Lg sigma_max_stability %lf min_stability_sampled %Lg sigma_min_stability %lf asymmetry_sampled %Lg n_sat_sampled %Lg sigma_n_sat %lf\tdynamics_steps %Lg\tsigma_dynamics_steps %lf\tphysical time %Lg\tsigma_physical_time %lf\n", N_samp, N, alpha, strenghtN, D_maxstrenght, t * delta_D, ave_stability_sampled, sqrt((ave_stability2_sampled - ave_stability_sampled*ave_stability_sampled )/(double)N_samp), max_stability_sampled, sqrt((max_stability2_sampled - max_stability_sampled*max_stability_sampled )/(double)N_samp),min_stability_sampled, sqrt((min_stability2_sampled - min_stability_sampled*min_stability_sampled )/(double)N_samp),asymmetry_sampled, n_sat_sampled, sqrt((n_sat2_sampled-n_sat_sampled*n_sat_sampled)/(double)N_samp), steps_sampled, sqrt((steps2_sampled-steps_sampled*steps_sampled)/(double)N_samp), phys_time_sampled, sqrt((phys_time2_sampled-phys_time_sampled*phys_time_sampled)/(double)N_samp));
 		fflush(fout3);
 	}
 
