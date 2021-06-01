@@ -176,55 +176,87 @@ int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
 	return time;
 }
 
-int async_dynamics(int *sigma, double **J)
+void async_dynamics(int *sigma, double **J)
 { //runs asyncronous hopfield dynamics until convergence
 
-	int i, j, k, flag = 0, time = 0, count;
-	double field;
+	int i, j, k, l, flag = 0, flip = 0, time = 0, count = 0;
 	int *sigma_new;
+	double *field;
 	sigma_new = (int *)malloc(N * sizeof(int));
+	field = (double *)malloc(N * sizeof(double));
 	if (sigma_new == NULL)
 	{
 		printf("malloc of sigma array failed.\n");
 	}
-
-	while (flag == 0)
+	if (field == NULL)
 	{
-		//printf("time = %d\n", time);
+		printf("malloc of field array failed.\n");
+	}
+	for(l = 0; l < N; l++){
+		field[l] = 0;
+		for(j = 0; j < N; j++){
+			field[l] += J[l][j] * sigma[j]; 
+		}
+		if(sigma[l] * field[l] > 0){
+			count++;
+		} 
+	}
+	if(count < N){
+		while (flag == 0)
+		{
+			//printf("time = %d\n", time);
+		
+			do{
+				i = (int)((lrand48() / (double)RAND_MAX) * (double)N);
+			} while (i == N);
+		
+			if (field[i] > 0)
+			{
+				sigma_new[i] = 1;
+			}
+			else
+			{
+				sigma_new[i] = -1;
+				
+				//printf("ok\n");
+			}
+			flip = sigma[i]*sigma_new[i];
+			count = 0;
+		
+			if(flip == -1){
+				for(j = 0; j < N; j++){
+					field[j] = field[j] - 2*J[j][i] * sigma[i];
+					if(sigma[j] * field[j] <= 0 && j != i){
+						count++;
+					} 
+				}
+				if(count == 0){
+					flag++;
+				}
 
-		do
-		{
-			i = (int)((lrand48() / (double)RAND_MAX) * (double)N);
-		} while (i == N);
-		field = 0;
-		for (j = 0; j < N; j++)
-		{
-			field = field + J[i][j] * (double)sigma[j];
-		}
-		if (field > 0)
-		{
-			sigma_new[i] = 1;
-		}
-		else
-		{
-			sigma_new[i] = -1;
-			//printf("ok\n");
-		}
+			}else{
+				for(j = 0; j < N; j++){
+					if(sigma[j] * field[j] <= 0 && j != i){
+						count++;
+					} 
+				}
+				if(count == 0){
+					flag++;
+				}
+			}
+			if(count == 1 && time == N){
+				printf("Something got wrong.\n");
+			}
 
-		count = 0;
-		for (k = 0; k < N; k++)
-		{
-			count = count + sigma[k] * sigma_new[k];
-		}
-		if (count == N)
-		{
-			flag++;
-		}
+			time++;
+			
+			sigma[i] = sigma_new[i];
+		
 
-		sigma[i] = sigma_new[i];
 
-		time++;
-		//printf("time = %d\n", time);
+			
+		}
+	
 	}
 	return time;
 }
