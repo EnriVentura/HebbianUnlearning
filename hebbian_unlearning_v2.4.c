@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
 {
 	if (argc != 7)
 	{
-		printf("Please use 6 input parameters\n");
+		printf("Please use 6 input parameters culooooo\n");
 		printf("Usage: hebbian_unlearning_v2.exe N alpha strenghtN D_max*strenght normalization_tipe n_samples \n");
 		exit(-9);
 	}
