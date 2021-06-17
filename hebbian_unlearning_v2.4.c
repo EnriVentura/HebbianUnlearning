@@ -351,10 +351,10 @@ long double get_norm(double **J, int i){
 
 int main(int argc, char *argv[])
 {
-	if (argc != 7)
+	if (argc != 8)
 	{
-		printf("Please use 6 input parameters culooooo\n");
-		printf("Usage: hebbian_unlearning_v2.exe N alpha strenghtN D_max*strenght normalization_tipe n_samples \n");
+		printf("Please use 6 input parameters \n");
+		printf("Usage: hebbian_unlearning_v2.exe N alpha strenghtN D_max*strenght normalization_tipe n_samples delta_seed\n");
 		exit(-9);
 	}
 
@@ -364,8 +364,8 @@ int main(int argc, char *argv[])
 	D_maxstrenght = atof(argv[4]);
 	NORM_TYPE = argv[5];
 	N_samp = atoi(argv[6]);
-
-	int seed = time(0);
+	int delta_seed = atoi(argv[7]);
+	int seed = time(0)+delta_seed;
 	srand48(seed);
 
 	int i, j, l, t, on;
