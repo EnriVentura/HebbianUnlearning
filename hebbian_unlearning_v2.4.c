@@ -219,6 +219,7 @@ void async_dynamics(int *sigma, double **J)
 			break;
 		}
 		time++;
+		if (time=99999){printf("ABORT async_dynamics did not converge/n");}
 	}
 }
 
