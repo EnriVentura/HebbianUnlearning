@@ -182,7 +182,7 @@ void async_dynamics(int *sigma, double **J)
 	while (time < 100000)
 	{
 		flag = 0;
-		i = (int)((lrand48() / (double)RAND_MAX) * (double)N);
+		i = (int)((lrand48() / (double)RAND_MAX) * (double)N); //even if i=N there is no problem
 		for (int site = i; site < N; site++)
 		{
 			field = 0;
