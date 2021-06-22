@@ -411,17 +411,17 @@ int main(int argc, char *argv[]){
 
 					}
 				}
-				ii = 0;
-				while(i_neg[ii] != -1 && ii < N){
-					for(int kk = 0; kk < N; kk++){
-						if(kk != i_neg[ii]){
-							J[i_neg[ii]][kk] += lambda * (mask[j][i_neg[ii]] + mask[j][kk]) * csi[j][i_neg[ii]] * csi[j][kk];
-							J[kk][i_neg[ii]] += lambda * (mask[j][i_neg[ii]] + mask[j][kk]) * csi[j][i_neg[ii]] * csi[j][kk];
-						}
+				
+			}
+
+			for(int i = 0; i < N; i++){
+				for(int j = i+1; j < N; j++){
+					for(int k = 0; k < P; k++){
+						J[i][j] += lambda * (mask[k][i] + mask[k][j]) * csi[k][i] * csi[k][j];
 					}
-					i_neg[ii] = -1;
-					ii++;
+					J[j][i] = J[i][j];
 				}
+				J[i][i] = 0;
 				
 			}
 
