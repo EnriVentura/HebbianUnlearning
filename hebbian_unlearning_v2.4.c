@@ -219,7 +219,7 @@ void async_dynamics(int *sigma, double **J)
 			break;
 		}
 		time++;
-		if (time=99999){printf("ABORT async_dynamics did not converge/n"); exit (-9);}
+		if (time==99999){printf("ABORT async_dynamics did not converge/n"); exit (-9);}
 	}
 }
 
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 {
 	if (argc != 8)
 	{
-		printf("Please use 6 input parameters \n");
+		printf("Please use 7 input parameters \n");
 		printf("Usage: hebbian_unlearning_v2.exe N alpha strenghtN D_max*strenght normalization_tipe n_samples delta_seed\n");
 		exit(-9);
 	}
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
 	int index_min, index_max, mu_min, mu_max, over_min, over_max;
 
 	long double strenght = strenghtN / N;
-	int D, delta_D = (int)(0.005 / strenght), delta_D_histos = (int)(0.05 / strenght), D_max = (int)(D_maxstrenght / strenght);
+	int D, delta_D = (int)(0.02 / strenght), delta_D_histos = (int)(0.2 / strenght), D_max = (int)(D_maxstrenght / strenght);
 	int N_steps = (int)((double)D_max / delta_D_histos) + 1;
 
 	// Initialization of the main configuration/interaction arrays
