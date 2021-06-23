@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	int initial_pattern = 0; //index of the test pattern with respect to the which we compute the overlap
+	int initial_pattern; //index of the test pattern with respect to the which we compute the overlap
 
 	// Initialization of the output files
 
@@ -756,6 +756,11 @@ int main(int argc, char *argv[])
 
             	Overlap = 0;
             	for(int l = 0; l < N_samp_over; l++){
+
+            		do{
+            			initial_pattern = (int)((lrand48()/(double)RAND_MAX)*P);
+            		}while(initial_pattern == P);
+
 					sigma_new = generate_initial(csi, initial_pattern);
 					async_dynamics(sigma_new, J);
 					Overlap += overlap(csi, sigma_new, initial_pattern);
