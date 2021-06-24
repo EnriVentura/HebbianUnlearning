@@ -62,17 +62,9 @@ void generate_J(int P, int **csi, double **J)
 	}
 }
 
-int *generate_initial(int **csi, int pattern)
+void generate_initial(int * sigma, int **csi, int pattern)
 { //generate an initial configuration with an average distance from pattern given by p_in
-
 	int i, j;
-	int *sigma;
-	sigma = (int *)malloc(N * sizeof(int));
-	if (sigma == NULL)
-	{
-		printf("malloc of sigma array failed.\n");
-	}
-
 	for (i = 0; i < N; i++)
 	{
 		if ((lrand48() / (double)RAND_MAX) < p_in)
@@ -84,21 +76,12 @@ int *generate_initial(int **csi, int pattern)
 			sigma[i] = csi[pattern][i];
 		}
 	}
-	return sigma;
 }
 
-int *generate_rand_initial()
+void generate_rand_initial(int * sigma) //marco this now acts on global variables
 { //random shooting generator
 
-	int i, j;
-	int *sigma;
-	sigma = (int *)malloc(N * sizeof(int));
-	if (sigma == NULL)
-	{
-		printf("malloc of sigma array failed.\n");
-	}
-
-	for (i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		if ((lrand48() / (double)RAND_MAX) < p)
 		{
@@ -109,7 +92,6 @@ int *generate_rand_initial()
 			sigma[i] = -1;
 		}
 	}
-	return sigma;
 }
 
 double H(double **J, int *sigma)
@@ -420,9 +402,9 @@ int main(int argc, char *argv[])
 	}
 	else if (strcmp(NORM_TYPE, "ROW_NORM") == 0)
 	{
-		sprintf(string, "unlearningV2ROWNORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string2, "unlearningV2ROWNORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string3, "unlearningV2ROWNORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string, "unlearningV2ROWNORM_overlap_N%d_alpha%Lg_strenghtN%Lg_samp%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string2, "unlearningV2ROWNORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_samp%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string3, "unlearningV2ROWNORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_samp%d.dat", N, alpha, strenghtN, N_samp);
 		sprintf(string4, "unlearning_histoROWNORM_SAT_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
 		sprintf(string5, "unlearning_histoROWNORM_UNSAT_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
 		sprintf(string6, "unlearning_histoROWNORM_ALL_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
@@ -431,9 +413,9 @@ int main(int argc, char *argv[])
 	}
 	else if (strcmp(NORM_TYPE, "TOT_NORM") == 0)
 	{
-		sprintf(string, "unlearningV2TOT_NORM_overlap_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string2, "unlearningV2TOT_NORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string3, "unlearningV2TOT_NORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_seed%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string, "unlearningV2TOT_NORM_overlap_N%d_alpha%Lg_strenghtN%Lg_samp%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string2, "unlearningV2TOT_NORM_Jmoments_N%d_alpha%Lg_strenghtN%Lg_samp%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string3, "unlearningV2TOT_NORM_stabilities_N%d_alpha%Lg_strenghtN%Lg_samp%d.dat", N, alpha, strenghtN, N_samp);
 		sprintf(string4, "unlearning_histoTOT_NORM_SAT_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
 		sprintf(string5, "unlearning_histoTOT_NORM_UNSAT_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
 		sprintf(string6, "unlearning_histoTOT_NORM_ALL_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
@@ -640,7 +622,7 @@ int main(int argc, char *argv[])
 
 			if (D > 0)
 			{
-				sigma = generate_rand_initial();
+				generate_rand_initial(sigma);
 				async_dynamics(sigma, J);
 				updateJ(J, sigma, strenght);
 				normalizeJ(NORM_TYPE, J);
@@ -733,12 +715,11 @@ int main(int argc, char *argv[])
 				Overlap = 0;
 				for (int l = 0; l < N_samp_over; l++)
 				{
-					sigma_new = generate_initial(csi, initial_pattern);
+					generate_initial(sigma_new, csi, initial_pattern);
 					async_dynamics(sigma_new, J);
 					Overlap += overlap(csi, sigma_new, initial_pattern);
 				}
 				over[i][t] = Overlap / (double)N_samp_over;
-
 				t++;
 			}
 
@@ -746,7 +727,7 @@ int main(int argc, char *argv[])
 			{
 				for (int l = 0; l < N_samp_over_percept; l++)
 				{
-					sigma = generate_rand_initial();
+					generate_rand_initial(sigma);
 					async_dynamics(sigma, J);
 
 					double stab_max = 0;
