@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	int initial_pattern = 0; //index of the test pattern with respect to the which we compute the overlap
+	int initial_pattern; //index of the test pattern with respect to the which we compute the overlap
 
 	// Initialization of the output files
 
