@@ -12,6 +12,8 @@
 char *NORM_TYPE;
 int N, N_samp;
 long double alpha, strenghtN, D_maxstrenght;
+int *sigma1;
+int *sigma2;
 
 void generate_csi(int P, int **csi)
 { //generate memories as a bernoulli process with probability p
@@ -64,51 +66,36 @@ void generate_J(int P, int **csi, double **J)
 int *generate_initial(int **csi, int pattern, double p_in)
 { //generate an initial configuration with an average distance from pattern given by p_in
 
-	int i, j;
-	int *sigma;
-	sigma = (int *)malloc(N * sizeof(int));
-	if (sigma == NULL)
-	{
-		printf("malloc of sigma array failed.\n");
-	}
-
+	int i;
 	for (i = 0; i < N; i++)
 	{
 		if ((lrand48() / (double)RAND_MAX) < p_in)
 		{
-			sigma[i] = (-1) * csi[pattern][i];
+			sigma1[i] = (-1) * csi[pattern][i];
 		}
 		else
 		{
-			sigma[i] = csi[pattern][i];
+			sigma1[i] = csi[pattern][i];
 		}
 	}
-	return sigma;
+	return sigma1;
 }
 
 int *generate_rand_initial()
 { //random shooting generator
-
-	int i, j;
-	int *sigma;
-	sigma = (int *)malloc(N * sizeof(int));
-	if (sigma == NULL)
-	{
-		printf("malloc of sigma array failed.\n");
-	}
-
+	int i;
 	for (i = 0; i < N; i++)
 	{
 		if ((lrand48() / (double)RAND_MAX) < p)
 		{
-			sigma[i] = 1;
+			sigma2[i] = 1;
 		}
 		else
 		{
-			sigma[i] = -1;
+			sigma2[i] = -1;
 		}
 	}
-	return sigma;
+	return sigma2;
 }
 
 double H(double **J, int *sigma)
@@ -333,7 +320,7 @@ int main(int argc, char *argv[])
 {
 	if (argc != 7)
 	{
-		printf("Please use 5 input parameters \n");
+		printf("Please use 6 input parameters \n");
 		printf("Usage: hebbian_unlearning_v2.exe N alpha strenghtN normalization_tipe n_samples delta_seed\n");
 		exit(-9);
 	}
@@ -370,23 +357,36 @@ int main(int argc, char *argv[])
 	double Deps_measure[3];   			
 	char stringin[150];
 	sprintf(stringin, "Dpoints_N%d_a%Lg_e%Lg.dat", N, alpha, strenghtN);
-	FILE *take_D;
+	FILE * take_D;
 	take_D = fopen(stringin, "r");
-
+	if (take_D == NULL){printf("need files for D!"); exit (1);}
 	fscanf(take_D, "%lf\t%lf\t%lf\n", &Deps_measure[0], &Deps_measure[1], &Deps_measure[2]);
+	fclose(take_D);
+
 	D_maxstrenght = Deps_measure[2] + 0.05;
 	long double strenght = strenghtN / N;
 	int D, D_max = (int)(D_maxstrenght / strenght);
-										//N = 300, alpha = 0.4, eps = 0.01, {0.248, 0.395 ,0.428}; N = 300, alpha = 0.3, eps = 0.01, {0.136, 0.249 ,0.332}; N = 300, alpha = 0.5, eps = 0.01, {0.38, 0.46 ,0.51}; N = 300, alpha = 0.6, eps = 0.01, {0.55}; N = 300, alpha = 0.59, eps = 0.01, {0.540};
 									   //N = 100, alpha = 0.3, eps = 0.01, {0.105, 0.235, 0.324}; alpha = 0.4, eps = 0.01, {0.231, 0.35, 0.426}; alpha = 0.5, eps = 0.01, {0.336, 0.445, 0.5}; alpha = 0.59, eps = 0.01, {0.529}; 
 									   // N = 150, alpha = 0.3, eps = 0.01, {0.119, 0.242, 0.330}; alpha = 0.4, eps = 0.01, {0.234, 0.353, 0.430}; alpha = 0.5, eps = 0.01, {0.371, 0.451, 0.507}; alpha = 0.59, eps = 0.01, {0.537};
 									   // N = 200, alpha = 0.3, eps = 0.01, {0.126, 0.249, 0.332}; alpha = 0.4, eps = 0.01, {0.241, 0.353, 0.429}; alpha = 0.5, eps = 0.01, {0.375, 0.456, 0.511}; alpha = 0.59, eps = 0.01. {0.534};
-									   // N = 400, alpha = 0.3, eps = 0.01, {0.141, 0.25, 0.331}; alpha = 0.4, eps = 0.01, {0.249, 0.363, 0.428}; alpha = 0.5, eps = 0.01, {0.381, 0.463, 0.512}; alpha = 0.59, eps = 0.01, {0.542}; 
-		
+									   	//N = 300, alpha = 0.3, eps = 0.01, {0.136, 0.249 ,0.332}; N = 300, alpha = 0.4, eps = 0.01, {0.248, 0.395 ,0.428}; N = 300, alpha = 0.5, eps = 0.01, {0.38, 0.46 ,0.51}; N = 300, alpha = 0.6, eps = 0.01, {0.55}; N = 300, alpha = 0.59, eps = 0.01, {0.540};
+										// N = 400, alpha = 0.3, eps = 0.01, {0.141, 0.25, 0.331}; alpha = 0.4, eps = 0.01, {0.249, 0.363, 0.428}; alpha = 0.5, eps = 0.01, {0.381, 0.463, 0.512}; alpha = 0.59, eps = 0.01, {0.542}; 
+	
 	// Initialization of the main configuration/interaction arrays
 
 	sigma = (int *)malloc(N * sizeof(int));
 	sigma_new = (int *)malloc(N * sizeof(int));
+
+	sigma1 = (int *)malloc(N * sizeof(int)); //this is an ugly way of getting the malloc out of generate_initial(int **csi, int pattern, double p_in)
+	if (sigma1 == NULL)
+	{
+		printf("malloc of sigma1 array failed.\n");
+	}
+	sigma2 = (int *)malloc(N * sizeof(int)); //this is an ugly way of getting the malloc out of generate_rand_initial()
+	if (sigma2 == NULL)
+	{
+		printf("malloc of sigma2 array failed.\n");
+	}
 
 	csi = (int **)malloc(P * sizeof(int *));
 	J = (double **)malloc(N * sizeof(double *));
@@ -401,8 +401,8 @@ int main(int argc, char *argv[])
 	}
 	for (i = 0; i < N_samp; i++)
 	{
-		over[i] = (double **)malloc(3 * sizeof(double*));
-		for(j = 0; j < 3; j++){
+		over[i] = (double **) malloc(3 * sizeof(double*));
+		for(int j = 0; j < 3; j++){
 			over[i][j] = (double *)malloc((int)(0.5*N)* sizeof(double));
 		}
 	}
@@ -423,29 +423,29 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+
 	int initial_pattern = 0; //index of the test pattern with respect to the which we compute the overlap
 
 	// Initialization of the output files
-
 	char string[100], string2[100], string3[100];
 	if (strcmp(NORM_TYPE, "NO_NORM") == 0)
 	{
-		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
 
 	}
 	else if (strcmp(NORM_TYPE, "ROW_NORM") == 0)
 	{
-		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
 	}
 	else if (strcmp(NORM_TYPE, "TOT_NORM") == 0)
 	{
-		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
-		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d.dat", N, alpha, strenghtN, N_samp);
+		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
 	}
 	else
 	{
@@ -487,12 +487,11 @@ int main(int argc, char *argv[])
 			if (D > 0 && t < 3 && D % (int)(Deps_measure[t]/strenght) == 0)
 			{
 				printf("Deps/N = %Lg\n", (long double)D*strenght);
-
-				for (int l = 0; l < (int)(0.5*N) + 1; l++)
+				for (int l = 0; l < (int)(0.5*N); l++)
 				{
 					sigma_new = generate_initial(csi, initial_pattern, (1-l*(double)(2/(double)N))*0.5);
 					async_dynamics(sigma_new, J);
-					over[i][t][l] = overlap(csi, sigma_new, initial_pattern);
+					over[i][t][l] = overlap(csi, sigma_new, initial_pattern); 
 				}
 
 				t++;
@@ -532,7 +531,6 @@ int main(int argc, char *argv[])
 			}else if(t == 2){
 				fprintf(fout3, "%Lg\t%lf\t%lf\n", (long double)(l*2/(double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
 				fflush(fout3);
-
 			}
 		}	
 

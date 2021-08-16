@@ -6,6 +6,7 @@
 
 int N, P, N_samp, max_iter;
 long double lambda, alpha, c, p = 0.5;
+int *sigma1, *sigma2;
 
 void generate_csi(int P, int **csi)
 { //generate memories as a bernoulli process with probability p
@@ -57,52 +58,37 @@ void generate_J(int P, int **csi, double **J)
 
 int *generate_initial(int **csi, int pattern, double p_in)
 { //generate an initial configuration with an average distance from pattern given by p_in
-
 	int i, j;
-	int *sigma;
-	sigma = (int *)malloc(N * sizeof(int));
-	if (sigma == NULL)
-	{
-		printf("malloc of sigma array failed.\n");
-	}
-
 	for (i = 0; i < N; i++)
 	{
 		if ((lrand48() / (double)RAND_MAX) < p_in)
 		{
-			sigma[i] = (-1) * csi[pattern][i];
+			sigma1[i] = (-1) * csi[pattern][i];
 		}
 		else
 		{
-			sigma[i] = csi[pattern][i];
+			sigma1[i] = csi[pattern][i];
 		}
 	}
-	return sigma;
+	return sigma1;
 }
 
 int *generate_rand_initial()
 { //random shooting generator
 
 	int i, j;
-	int *sigma;
-	sigma = (int *)malloc(N * sizeof(int));
-	if (sigma == NULL)
-	{
-		printf("malloc of sigma array failed.\n");
-	}
-
 	for (i = 0; i < N; i++)
 	{
 		if ((lrand48() / (double)RAND_MAX) < p)
 		{
-			sigma[i] = 1;
+			sigma2[i] = 1;
 		}
 		else
 		{
-			sigma[i] = -1;
+			sigma2[i] = -1;
 		}
 	}
-	return sigma;
+	return sigma2;
 }
 
 void async_dynamics(int *sigma, double **J)
@@ -151,10 +137,12 @@ void async_dynamics(int *sigma, double **J)
 		}
 		time++;
 		//printf("time = %d\n", time);
-		if (time == 99999){printf("ABORT async_dynamics did not converge\n"); exit (-9);}
+		if (time == 99999)
+		{
+			printf("ABORT async_dynamics did not converge\n");
+			exit(-9);
+		}
 	}
-	
-
 }
 
 double overlap(int **csi, int *vec, int pattern)
@@ -195,8 +183,8 @@ long double get_norm(double **J, int i)
 	return norm;
 }
 
-
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 
 	if (argc != 8)
 	{
@@ -216,18 +204,29 @@ int main(int argc, char *argv[]){
 	srand48(seed);
 
 	char string[150];
-	
+
 	sprintf(string, "sym_perceptron_basin_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d.dat", N, alpha, lambda, c, N_samp);
 
 	FILE *fout1;
 	fout1 = fopen(string, "w");
-	
+
 	int i;
 
-	P = (int)(alpha*(double)N);
+	P = (int)(alpha * (double)N);
 
 	int **csi, *sigma, *sigma_new, **mask;
 	double **J;
+
+	sigma1 = (int *)malloc(N * sizeof(int)); //this is an ugly way of getting the malloc out of generate_initial(int **csi, int pattern, double p_in)
+	if (sigma1 == NULL)
+	{
+		printf("malloc of sigma array failed.\n");
+	}
+	sigma2 = (int *)malloc(N * sizeof(int)); //this is an ugly way of getting the malloc out of generate_random_initial()
+	if (sigma2 == NULL)
+	{
+		printf("malloc of sigma array failed.\n");
+	}
 
 	sigma = (int *)malloc(N * sizeof(int));
 	sigma_new = (int *)malloc(N * sizeof(int));
@@ -264,22 +263,22 @@ int main(int argc, char *argv[]){
 	over = (double **)malloc(N_samp * sizeof(double *));
 	for (int i = 0; i < N_samp; i++)
 	{
-		over[i] = (double *)malloc((int)(0.5*N)*sizeof(double));
+		over[i] = (double *)malloc((int)(0.5 * N) * sizeof(double));
 	}
 
 	int initial_pattern = 0;
 
-	for(int samp = 0; samp < N_samp; samp++){
-		
+	for (int samp = 0; samp < N_samp; samp++)
+	{
 		printf("Sample #%d of %d\n", samp + 1, N_samp);
 		generate_csi(P, csi);
 		generate_J(P, csi, J);
 
 		double k;
-		int t = 0;
-
-		do{
-
+		int t, endcounter;
+		for (t = 0; t < max_iter; t++)
+		{
+			endcounter = 0; //this avoids iterating after all masks are 0!
 			for (int j = 0; j < P; j++)
 			{
 				for (int i = 0; i < N; i++)
@@ -292,65 +291,57 @@ int main(int argc, char *argv[]){
 						stab += J[i][kk] * csi[j][kk] * csi[j][i] / norm;
 					}
 
-					if(stab >= c){
+					if (stab >= c)
+					{
 						mask[j][i] = 0;
-					}else{
+						endcounter++;
+					}
+					else
+					{
 						mask[j][i] = 1;
 					}
-				
 				}
-				
+			}
+			if (endcounter == N * P)
+			{
+				break;
 			}
 
-			for(int i = 0; i < N; i++){
-				for(int j = i+1; j < N; j++){
-					for(int k = 0; k < P; k++){
+			for (int i = 0; i < N; i++)
+			{
+				for (int j = i + 1; j < N; j++)
+				{
+					for (int k = 0; k < P; k++)
+					{
 						J[i][j] += lambda * (mask[k][i] + mask[k][j]) * csi[k][i] * csi[k][j];
 					}
 					J[j][i] = J[i][j];
 				}
 				J[i][i] = 0;
-				
 			}
+			if (t == max_iter-1){printf("algorithm did not converge in %d iterations", max_iter); exit (1);}
+		}
 
-
-			if(t == max_iter - 1){
-			for (int l = 0; l < (int)(0.5*N) + 1; l++)
-				{
-					sigma_new = generate_initial(csi, initial_pattern, (1-l*(double)(2/(double)N))*0.5);
-					async_dynamics(sigma_new, J);
-					over[samp][l] = overlap(csi, sigma_new, initial_pattern);
-				}
-			}
-
-			t++;
-
-		}while(t < max_iter);
-
-
+		for (int l = 0; l < (int)(0.5 * N); l++) //this was l < (int)(0.5*N)+1
+		{
+			sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
+			async_dynamics(sigma_new, J);
+			over[samp][l] = overlap(csi, sigma_new, initial_pattern);
+		}
 	}
 
-	for(int l = 0; l < (int)(0.5*N); l++){
-			
+	for (int l = 0; l < (int)(0.5 * N); l++)
+	{
 		double m = 0;
 		double sigma_m = 0;
-			
 		for (i = 0; i < N_samp; i++)
 		{
-			
 			m = m + over[i][l] / (double)N_samp;
 			sigma_m = sigma_m + over[i][l] * over[i][l] / (double)N_samp;
-			
 		}
-			
-		fprintf(fout1, "%Lg\t%lf\t%lf\n", (long double)(l*2/(double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
+		fprintf(fout1, "%Lg\t%lf\t%lf\n", (long double)(l * 2 / (double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
 		fflush(fout1);
-
-			
 	}
-
 	fclose(fout1);
-
-
-
+	return 0;
 }
