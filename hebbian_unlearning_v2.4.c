@@ -14,6 +14,7 @@ char *NORM_TYPE;
 int N, N_samp, delta_seed;
 long double alpha, strenghtN, D_maxstrenght;
 int *sigma1;
+int *sigma2;
 int *sigma_new;
 double *field;
 
@@ -90,14 +91,14 @@ int *generate_rand_initial()
 	{
 		if ((lrand48() / (double)RAND_MAX) < p)
 		{
-			sigma1[i] = 1;
+			sigma2[i] = 1;
 		}
 		else
 		{
-			sigma1[i] = -1;
+			sigma2[i] = -1;
 		}
 	}
-	return sigma1;
+	return sigma2;
 }
 
 double H(double **J, int *sigma)
@@ -376,6 +377,11 @@ int main(int argc, char *argv[])
 	if (sigma1 == NULL)
 	{
 		printf("malloc of sigma1 array failed.\n");
+	}
+	sigma2 = (int *)malloc(N * sizeof(int));
+	if (sigma2 == NULL)
+	{
+		printf("malloc of sigma2 array failed.\n");
 	}
 	sigma_new = (int *)malloc(N * sizeof(int));
 	if (sigma_new == NULL)
