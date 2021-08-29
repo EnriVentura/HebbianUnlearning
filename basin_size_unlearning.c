@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
 	FILE * take_D;
 	take_D = fopen(stringin, "r");
 	if (take_D == NULL){printf("need files for D!"); exit (1);}
-	fscanf(take_D, "%lf\t%lf\t%lf\n", &Deps_measure[0], &Deps_measure[1], &Deps_measure[2]);
+	fscanf(take_D, "%lf\t%lf\t%lf\n", &Deps_measure[0], &Deps_measure[1], &Deps_measure[2]); // these 3 are D_in*eps/N, D_opt*eps/N, D_fin*eps/N
 	fclose(take_D);
 
 	D_maxstrenght = Deps_measure[2] + 0.05;

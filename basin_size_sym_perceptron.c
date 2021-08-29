@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 
 	char string[150];
 
-	sprintf(string, "sym_perceptron_basin_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d.dat", N, alpha, lambda, c, N_samp);
+	sprintf(string, "sym_perceptron_basin_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d_seed%d.dat", N, alpha, lambda, c, N_samp, seed);
 
 	FILE *fout1;
 	fout1 = fopen(string, "w");
