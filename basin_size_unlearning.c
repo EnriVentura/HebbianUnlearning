@@ -98,7 +98,8 @@ int *generate_rand_initial()
 	return sigma2;
 }
 
-double H(double **J, int *sigma)
+int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
+{ /double H(double **J, int *sigma)
 { //computes energy from Hopfield hamiltonian
 
 	double H = 0;
@@ -115,8 +116,7 @@ double H(double **J, int *sigma)
 	return H;
 }
 
-int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
-{ //runs syncronous hopfield dynamics until convergence
+/runs syncronous hopfield dynamics until convergence
 
 	int i, j, flag = 0, count;
 	double field;
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 	fclose(take_D);
 
 	D_maxstrenght = Deps_measure[2] + 0.05;
-	long double strenght = strenghtN / N;
+	long double strenght = strenghtN / N;  //strenghtN è epsilon
 	int D, D_max = (int)(D_maxstrenght / strenght);
 									   //N = 100, alpha = 0.3, eps = 0.01, {0.105, 0.235, 0.324}; alpha = 0.4, eps = 0.01, {0.231, 0.35, 0.426}; alpha = 0.5, eps = 0.01, {0.336, 0.445, 0.5}; alpha = 0.59, eps = 0.01, {0.529}; 
 									   // N = 150, alpha = 0.3, eps = 0.01, {0.119, 0.242, 0.330}; alpha = 0.4, eps = 0.01, {0.234, 0.353, 0.430}; alpha = 0.5, eps = 0.01, {0.371, 0.451, 0.507}; alpha = 0.59, eps = 0.01, {0.537};

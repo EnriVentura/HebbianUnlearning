@@ -203,17 +203,8 @@ int main(int argc, char *argv[])
 	int seed = time(0) + delta_seed;
 	srand48(seed);
 
-	char string[150];
-
-	sprintf(string, "sym_perceptron_basin_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d_seed%d.dat", N, alpha, lambda, c, N_samp, seed);
-
-	FILE *fout1;
-	fout1 = fopen(string, "w");
-
 	int i;
-
 	P = (int)(alpha * (double)N);
-
 	int **csi, *sigma, *sigma_new, **mask;
 	double **J;
 
@@ -267,7 +258,7 @@ int main(int argc, char *argv[])
 	}
 
 	int initial_pattern = 0;
-
+	int skipped_samples =0;
 	for (int samp = 0; samp < N_samp; samp++)
 	{
 		printf("Sample #%d of %d\n", samp + 1, N_samp);
@@ -319,8 +310,8 @@ int main(int argc, char *argv[])
 				}
 				J[i][i] = 0;
 			}
-			if (t == max_iter-1){printf("algorithm did not converge in %d iterations", max_iter); exit (1);}
 		}
+		if (t == max_iter-1){skipped_samples++; i--; continue;}
 
 		for (int l = 0; l < (int)(0.5 * N); l++) //this was l < (int)(0.5*N)+1
 		{
@@ -329,6 +320,11 @@ int main(int argc, char *argv[])
 			over[samp][l] = overlap(csi, sigma_new, initial_pattern);
 		}
 	}
+
+	char string[150];
+	sprintf(string, "sym_perceptron_basin_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d_skipped_%d_seed%d.dat", N, alpha, lambda, c, N_samp, skipped_samples, seed);
+	FILE *fout1;
+	fout1 = fopen(string, "w");
 
 	for (int l = 0; l < (int)(0.5 * N); l++)
 	{
