@@ -14,6 +14,9 @@ int N, N_samp;
 long double alpha, strenghtN, D_maxstrenght;
 int *sigma1;
 int *sigma2;
+FILE *fout1;
+FILE *fout2;
+FILE *fout3;
 
 void generate_csi(int P, int **csi)
 { //generate memories as a bernoulli process with probability p
@@ -98,8 +101,7 @@ int *generate_rand_initial()
 	return sigma2;
 }
 
-int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
-{ /double H(double **J, int *sigma)
+double H(double **J, int *sigma)
 { //computes energy from Hopfield hamiltonian
 
 	double H = 0;
@@ -115,8 +117,9 @@ int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
 
 	return H;
 }
-
-/runs syncronous hopfield dynamics until convergence
+int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
+{
+	//runs syncronous hopfield dynamics until convergence
 
 	int i, j, flag = 0, count;
 	double field;
@@ -206,18 +209,28 @@ void async_dynamics(int *sigma, double **J)
 		}
 		time++;
 		//printf("time = %d\n", time);
-		if (time == 99999){printf("ABORT async_dynamics did not converge/n"); exit (-9);}
+		if (time == 99999)
+		{
+			printf("ABORT async_dynamics did not converge/n");
+			exit(-9);
+		}
 	}
-	for( int i = 0; i < N; i++){
+	for (int i = 0; i < N; i++)
+	{
 		double stab = 0;
-		for( int k = 0; k < N; k++){
+		for (int k = 0; k < N; k++)
+		{
 			stab += J[i][k] * sigma[k] * sigma[i];
 		}
-		if(stab < 0){
+		if (stab < 0)
+		{
 			printf("\nAIUTO!!!\n\n");
+			fprintf(fout1, "\nAIUTO!!!\n\n");
+			fprintf(fout2, "\nAIUTO!!!\n\n");
+			fprintf(fout3, "\nAIUTO!!!\n\n");
+
 		}
 	}
-
 }
 
 double overlap(int **csi, int *vec, int pattern)
@@ -353,25 +366,28 @@ int main(int argc, char *argv[])
 	int N_samp_over_percept = 200;
 	int index_min, index_max, mu_min, mu_max, over_min, over_max;
 
-	
-	double Deps_measure[3];   			
+	double Deps_measure[3];
 	char stringin[150];
 	sprintf(stringin, "Dpoints_N%d_a%Lg_e%Lg.dat", N, alpha, strenghtN);
-	FILE * take_D;
+	FILE *take_D;
 	take_D = fopen(stringin, "r");
-	if (take_D == NULL){printf("need files for D!"); exit (1);}
+	if (take_D == NULL)
+	{
+		printf("need files for D!");
+		exit(1);
+	}
 	fscanf(take_D, "%lf\t%lf\t%lf\n", &Deps_measure[0], &Deps_measure[1], &Deps_measure[2]); // these 3 are D_in*eps/N, D_opt*eps/N, D_fin*eps/N
 	fclose(take_D);
 
 	D_maxstrenght = Deps_measure[2] + 0.05;
-	long double strenght = strenghtN / N;  //strenghtN è epsilon
+	long double strenght = strenghtN / N; //strenghtN è epsilon
 	int D, D_max = (int)(D_maxstrenght / strenght);
-									   //N = 100, alpha = 0.3, eps = 0.01, {0.105, 0.235, 0.324}; alpha = 0.4, eps = 0.01, {0.231, 0.35, 0.426}; alpha = 0.5, eps = 0.01, {0.336, 0.445, 0.5}; alpha = 0.59, eps = 0.01, {0.529}; 
-									   // N = 150, alpha = 0.3, eps = 0.01, {0.119, 0.242, 0.330}; alpha = 0.4, eps = 0.01, {0.234, 0.353, 0.430}; alpha = 0.5, eps = 0.01, {0.371, 0.451, 0.507}; alpha = 0.59, eps = 0.01, {0.537};
-									   // N = 200, alpha = 0.3, eps = 0.01, {0.126, 0.249, 0.332}; alpha = 0.4, eps = 0.01, {0.241, 0.353, 0.429}; alpha = 0.5, eps = 0.01, {0.375, 0.456, 0.511}; alpha = 0.59, eps = 0.01. {0.534};
-									   	//N = 300, alpha = 0.3, eps = 0.01, {0.136, 0.249 ,0.332}; N = 300, alpha = 0.4, eps = 0.01, {0.248, 0.395 ,0.428}; N = 300, alpha = 0.5, eps = 0.01, {0.38, 0.46 ,0.51}; N = 300, alpha = 0.6, eps = 0.01, {0.55}; N = 300, alpha = 0.59, eps = 0.01, {0.540};
-										// N = 400, alpha = 0.3, eps = 0.01, {0.141, 0.25, 0.331}; alpha = 0.4, eps = 0.01, {0.249, 0.363, 0.428}; alpha = 0.5, eps = 0.01, {0.381, 0.463, 0.512}; alpha = 0.59, eps = 0.01, {0.542}; 
-	
+	//N = 100, alpha = 0.3, eps = 0.01, {0.105, 0.235, 0.324}; alpha = 0.4, eps = 0.01, {0.231, 0.35, 0.426}; alpha = 0.5, eps = 0.01, {0.336, 0.445, 0.5}; alpha = 0.59, eps = 0.01, {0.529};
+	// N = 150, alpha = 0.3, eps = 0.01, {0.119, 0.242, 0.330}; alpha = 0.4, eps = 0.01, {0.234, 0.353, 0.430}; alpha = 0.5, eps = 0.01, {0.371, 0.451, 0.507}; alpha = 0.59, eps = 0.01, {0.537};
+	// N = 200, alpha = 0.3, eps = 0.01, {0.126, 0.249, 0.332}; alpha = 0.4, eps = 0.01, {0.241, 0.353, 0.429}; alpha = 0.5, eps = 0.01, {0.375, 0.456, 0.511}; alpha = 0.59, eps = 0.01. {0.534};
+	//N = 300, alpha = 0.3, eps = 0.01, {0.136, 0.249 ,0.332}; N = 300, alpha = 0.4, eps = 0.01, {0.248, 0.395 ,0.428}; N = 300, alpha = 0.5, eps = 0.01, {0.38, 0.46 ,0.51}; N = 300, alpha = 0.6, eps = 0.01, {0.55}; N = 300, alpha = 0.59, eps = 0.01, {0.540};
+	// N = 400, alpha = 0.3, eps = 0.01, {0.141, 0.25, 0.331}; alpha = 0.4, eps = 0.01, {0.249, 0.363, 0.428}; alpha = 0.5, eps = 0.01, {0.381, 0.463, 0.512}; alpha = 0.59, eps = 0.01, {0.542};
+
 	// Initialization of the main configuration/interaction arrays
 
 	sigma = (int *)malloc(N * sizeof(int));
@@ -401,9 +417,10 @@ int main(int argc, char *argv[])
 	}
 	for (i = 0; i < N_samp; i++)
 	{
-		over[i] = (double **) malloc(3 * sizeof(double*));
-		for(int j = 0; j < 3; j++){
-			over[i][j] = (double *)malloc((int)(0.5*N)* sizeof(double));
+		over[i] = (double **)malloc(3 * sizeof(double *));
+		for (int j = 0; j < 3; j++)
+		{
+			over[i][j] = (double *)malloc((int)(0.5 * N) * sizeof(double));
 		}
 	}
 
@@ -423,7 +440,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-
 	int initial_pattern = 0; //index of the test pattern with respect to the which we compute the overlap
 
 	// Initialization of the output files
@@ -433,7 +449,6 @@ int main(int argc, char *argv[])
 		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
 		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
 		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
-
 	}
 	else if (strcmp(NORM_TYPE, "ROW_NORM") == 0)
 	{
@@ -453,17 +468,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	FILE *fout1;
 	fout1 = fopen(string, "w");
-	FILE *fout2;
 	fout2 = fopen(string2, "w");
-	FILE *fout3;
 	fout3 = fopen(string3, "w");
-	
 
 	//fprintf(fout3, "Samples %d N %d alpha %Lg  D_maxstrenghtN %Lg D_maxstrenght %Lg norm %s \n", N_samp, N, alpha, strenghtN, D_maxstrenght, NORM_TYPE);
 
-	
 	for (i = 0; i < N_samp; i++)
 	{ //Repetition of the run over N_samp realizations of disorder
 
@@ -483,63 +493,60 @@ int main(int argc, char *argv[])
 				updateJ(J, sigma, strenght);
 				normalizeJ(NORM_TYPE, J);
 			}
-			
-			if (D > 0 && t < 3 && D % (int)(Deps_measure[t]/strenght) == 0)
+
+			if (D > 0 && t < 3 && D % (int)(Deps_measure[t] / strenght) == 0)
 			{
-				printf("Deps/N = %Lg\n", (long double)D*strenght);
-				for (int l = 0; l < (int)(0.5*N); l++)
+				printf("Deps/N = %Lg\n", (long double)D * strenght);
+				for (int l = 0; l < (int)(0.5 * N); l++)
 				{
-					sigma_new = generate_initial(csi, initial_pattern, (1-l*(double)(2/(double)N))*0.5);
+					sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
 					async_dynamics(sigma_new, J);
-					over[i][t][l] = overlap(csi, sigma_new, initial_pattern); 
+					over[i][t][l] = overlap(csi, sigma_new, initial_pattern);
 				}
 
 				t++;
 			}
-			
-
 		}
 		printf("end sample \n");
-		
 	}
 
 	// Analysis of the measures over the different samples
 
-	
 	for (t = 0; t < 3; t++)
 	{
-		for(int l = 0; l < (int)(0.5*N); l++){
-			
+		for (int l = 0; l < (int)(0.5 * N); l++)
+		{
+
 			m = 0;
 			sigma_m = 0;
-			
+
 			for (i = 0; i < N_samp; i++)
 			{
-			
+
 				m = m + over[i][t][l] / (double)N_samp;
 				sigma_m = sigma_m + over[i][t][l] * over[i][t][l] / (double)N_samp;
-			
 			}
-			if(t == 0){
-				fprintf(fout1, "%Lg\t%lf\t%lf\n", (long double)(l*2/(double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
+			if (t == 0)
+			{
+				fprintf(fout1, "%Lg\t%lf\t%lf\n", (long double)(l * 2 / (double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
 				fflush(fout1);
-
-			}else if(t == 1){
-				fprintf(fout2, "%Lg\t%lf\t%lf\n", (long double)(l*2/(double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
+			}
+			else if (t == 1)
+			{
+				fprintf(fout2, "%Lg\t%lf\t%lf\n", (long double)(l * 2 / (double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
 				fflush(fout2);
-
-			}else if(t == 2){
-				fprintf(fout3, "%Lg\t%lf\t%lf\n", (long double)(l*2/(double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
+			}
+			else if (t == 2)
+			{
+				fprintf(fout3, "%Lg\t%lf\t%lf\n", (long double)(l * 2 / (double)N), m, sqrt((sigma_m - m * m) / (double)N_samp));
 				fflush(fout3);
 			}
-		}	
-
+		}
 	}
 
 	fclose(fout1);
 	fclose(fout2);
 	fclose(fout3);
-	
 
 	return 0;
 }

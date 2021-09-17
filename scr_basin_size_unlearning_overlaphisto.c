@@ -17,8 +17,6 @@ int *sigma2;
 int *sigma_new;
 double *field;
 int delta_seed;
-FILE *fout1;
-
 
 void generate_csi(int P, int **csi)
 { //generate memories as a bernoulli process with probability p
@@ -166,71 +164,74 @@ int sync_dynamics(int *sigma, int *sigma_new, double **J, double *energ)
 
 void async_dynamics(int *sigma, double **J)
 { //runs asyncronous hopfield dynamics until convergence
-	int i, j, k, l, flag = 0, time = 0;
-	double field;
 
-	while (time < 100000)
+	int i, j, k, l, flag = 0, flip = 0, time = 0, count = 0;
+	for (l = 0; l < N; l++)
 	{
-		flag = 0;
-		i = (int)((lrand48() / (double)RAND_MAX) * (double)N); //even if i=N there is no problem
-		for (int site = i; site < N; site++)
+		field[l] = 0;
+		for (j = 0; j < N; j++)
 		{
-			field = 0;
-			for (int j = 0; j < N; j++)
-			{
-				field += J[site][j] * sigma[j];
-			}
-			if (field * sigma[site] < 0)
-			{
-				sigma[site] = -sigma[site];
-				flag = 1;
-				break;
-			}
+			field[l] += J[l][j] * sigma[j];
 		}
-		if (flag == 0)
+		if (sigma[l] * field[l] > 0)
 		{
-			for (int site = 0; site < i; site++)
-			{
-				field = 0;
-				for (int j = 0; j < N; j++)
-				{
-					field += J[site][j] * sigma[j];
-				}
-				if (field * sigma[site] < 0)
-				{
-					sigma[site] = -sigma[site];
-					flag = 1;
-					break;
-				}
-			}
-		}
-		if (flag == 0)
-		{
-			break;
-		}
-		time++;
-		//printf("time = %d\n", time);
-		if (time == 99999)
-		{
-			printf("ABORT async_dynamics did not converge/n");
-			exit(-9);
+			count++;
 		}
 	}
-	for (int i = 0; i < N; i++)
+	if (count < N)
 	{
-		double stab = 0;
-		for (int k = 0; k < N; k++)
+		while (flag == 0 && time < 100000)
 		{
-			stab += J[i][k] * sigma[k] * sigma[i];
-		}
-		if (stab < 0)
-		{
-			printf("\nAIUTO!!!\n\n");
-			fprintf(fout1, "\nAIUTO!!!\n\n");
+			do
+			{
+				i = (int)((lrand48() / (double)RAND_MAX) * (double)N);
+			} while (i == N);
+
+			if (field[i] > 0)
+			{
+				sigma_new[i] = 1;
+			}
+			else
+			{
+				sigma_new[i] = -1;
+			}
+			flip = sigma[i] * sigma_new[i];
+			count = 0;
+
+			if (flip == -1)
+			{
+				for (j = 0; j < N; j++)
+				{
+					field[j] = field[j] - 2 * J[j][i] * sigma[i];
+					if (sigma[j] * field[j] <= 0 && j != i)
+					{
+						count++;
+					}
+				}
+				if (count == 0)
+				{
+					flag++;
+				}
+			}
+			else
+			{
+				for (j = 0; j < N; j++)
+				{
+					if (sigma[j] * field[j] <= 0 && j != i)
+					{
+						count++;
+					}
+				}
+				if (count == 0)
+				{
+					flag++;
+				}
+			}
+			time++;
+			sigma[i] = sigma_new[i];
 		}
 	}
 }
-
 
 double overlap(int **csi, int *vec, int pattern)
 { //computes overlap between pattern and a given vector
@@ -349,6 +350,7 @@ int main(int argc, char *argv[])
 	char string1[150];
 	sprintf(string1, "unlearning_overlaphisto_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
 
+	FILE *fout1;
 	fout1 = fopen(string1, "w");
 
 	int i, j, l, t, on;
@@ -469,25 +471,40 @@ int main(int argc, char *argv[])
 			{
 				// Initialization of the output files
 
-				for (int l = 0; l < (int)(0.5 * N)+1; l++) //this was l < (int)(0.5*N)+1
+				for (int l = 0; l < (int)(0.5 * N) + 1; l++) //this was l < (int)(0.5*N)+1
 				{
-					for (int k = 0; k < 10; k++)
-					{ //this samples 10 overlaps for each l and sample
-						sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
-						async_dynamics(sigma_new, J);
-						freq[l][(int)((overlap(csi, sigma_new, initial_pattern) + 1) * (double)N)]++;
-					}
+					sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
+					async_dynamics(sigma_new, J);
+					over[samp][l] = overlap(csi, sigma_new, initial_pattern);
 				}
+
 				t++;
 			}
 		}
 	}
 
-	for (int j = 0; j < (int)(0.5 * N)+1; j++)
+	for (int l = 0; l < (int)(0.5 * N) + 1; l++)
+	{
+		for (int i = 0; i < (int)(2 * N) + 1; i++)
+		{
+			freq[l][i] = 0;
+		}
+		double m = 0;
+		double sigma_m = 0;
+		for (int i = 0; i < N_samp; i++)
+		{
+			m = m + over[i][l] / (double)N_samp;
+			sigma_m = sigma_m + over[i][l] * over[i][l] / (double)N_samp;
+			freq[l][(int)((over[i][l] + 1) * (double)N)]++;
+			//printf("%d\n", (int)(over[i][l] + 1)*N);
+		}
+	}
+
+	for (int j = 0; j < (int)(0.5 * N) + 1; j++)
 	{
 		fprintf(fout1, "%Lg\t", (long double)(j * 2 / (double)N));
 		fflush(fout1);
-		for (int i = 0; i < 2 * N +1; i++) //this was 2 * N + 1
+		for (int i = 0; i < 2 * N + 1; i++)
 		{
 			fprintf(fout1, "%d\t", freq[j][i]);
 			fflush(fout1);

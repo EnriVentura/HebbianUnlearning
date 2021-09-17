@@ -7,6 +7,7 @@
 int N, P, N_samp, max_iter;
 long double lambda, alpha, c, p = 0.5;
 int *sigma1, *sigma2;
+FILE *fout2;
 
 void generate_csi(int P, int **csi)
 { //generate memories as a bernoulli process with probability p
@@ -143,6 +144,19 @@ void async_dynamics(int *sigma, double **J)
 			exit(-9);
 		}
 	}
+		for (int i = 0; i < N; i++)
+	{
+		double stab = 0;
+		for (int k = 0; k < N; k++)
+		{
+			stab += J[i][k] * sigma[k] * sigma[i];
+		}
+		if (stab < 0)
+		{
+			printf("\nAIUTO!!!\n\n");
+			fprintf(fout2, "\nAIUTO!!!\n\n");
+		}
+	}
 }
 
 double overlap(int **csi, int *vec, int pattern)
@@ -210,7 +224,6 @@ int main(int argc, char *argv[])
 
 	//FILE *fout1;
 	//fout1 = fopen(string, "w");
-	FILE *fout2;
 	fout2 = fopen(string2, "w");
 
 	int i;
