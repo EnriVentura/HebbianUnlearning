@@ -14,13 +14,19 @@ long double get_norm(double **J, int i);
 void generate_rand_initial(int *sigma);
 void my_init();
 
+void compute_print_overlap();
+void initialize_sigma_to_pattern(int *sigma, int **csi, int pattern);
+double overlap(int **csi, int *vec, int pattern);
+
+
+
 int D_max, max_unlearning_samp, max_iter, seed;
 int N, P, N_samp, max_iter, seed, delta_seed;
-long double alpha, lambda, c, strenght;
-int *sigma, **csi, **mask;
+long double alpha, lambda, c, strenght, strenghtN;
+int *sigma, *sigma_new, **csi, **mask;
 double **J;
 char string[200];
-FILE *fout1;
+FILE *fout1, *fout2;
 
 int main(int argc, char *argv[])
 {
@@ -37,7 +43,7 @@ int main(int argc, char *argv[])
     c = atof(argv[4]);
     D_max = atoi(argv[5]);
     N_samp = atoi(argv[6]);
-    strenght = atof(argv[7]);
+    strenghtN = atof(argv[7]);
     max_unlearning_samp = atoi(argv[8]);
     int delta_seed = atoi(argv[9]);
     seed = time(0) + delta_seed;
@@ -46,25 +52,28 @@ int main(int argc, char *argv[])
 
     for (int samp = 0; samp < N_samp; samp++)
     {
-        //perceptron part
         generate_csi(P, csi);
+
+        //perceptron part
         generate_J(P, csi, J);
 
         //printing initial J matrix
-        fprintf(fout1, "sym_prc samp %d correspondance 0 step 0 J ", samp); fflush(fout1);
+        fprintf(fout1, "sym_prc samp %d correspondance 0 step 0 J ", samp);
+        fflush(fout1);
         for (int i = 0; i < N; i++)
         {
             for (int j = i + 1; j < N; j++)
             {
 
-                fprintf(fout1, "%lf ", J[i][j]); fflush(fout1);
+                fprintf(fout1, "%lf ", J[i][j]);
+                fflush(fout1);
             }
         }
-        fprintf(fout1, "\n"); fflush(fout1);
-
+        fprintf(fout1, "\n");
+        fflush(fout1);
 
         int endcounter, t;
-        int correspondance=1;
+        int correspondance = 1;
         for (t = 1; t < max_iter; t++)
         {
             endcounter = 0; //this avoids iterating after all masks are 0!
@@ -105,33 +114,41 @@ int main(int argc, char *argv[])
             //printing J matrix
             if (t % 10 == 0 && endcounter != N * P)
             {
-                fprintf(fout1, "sym_prc samp %d correspondance %d step %d J ", samp, correspondance, t); fflush(fout1);
+                fprintf(fout1, "sym_prc samp %d correspondance %d step %d J ", samp, correspondance, t);
+                fflush(fout1);
                 for (int i = 0; i < N; i++)
                 {
                     for (int j = i + 1; j < N; j++)
                     {
 
-                        fprintf(fout1, "%lf ", J[i][j]); fflush(fout1);
+                        fprintf(fout1, "%lf ", J[i][j]);
+                        fflush(fout1);
                     }
                 }
-                fprintf(fout1, "\n"); fflush(fout1);
+                fprintf(fout1, "\n");
+                fflush(fout1);
                 correspondance++;
             }
 
             if (endcounter == N * P)
             {
+                //compute_print_overlap(); //this is for debugging
                 //printing J matrix
-                fprintf(fout1, "sym_prc samp %d correspondance %d step %d J ", samp, correspondance, t); fflush(fout1);
+                fprintf(fout1, "sym_prc samp %d correspondance %d step %d J ", samp, correspondance, t);
+                fflush(fout1);
                 for (int i = 0; i < N; i++)
                 {
                     for (int j = i + 1; j < N; j++)
                     {
 
-                        fprintf(fout1, " %lf ", J[i][j]); fflush(fout1);
+                        fprintf(fout1, " %lf ", J[i][j]);
+                        fflush(fout1);
                     }
                 }
-                fprintf(fout1, "\n"); fflush(fout1);
-                fprintf(fout1, "sym_prc samp %d max_correspondance %d tot_steps %d \n", samp, correspondance, t); fflush(fout1);
+                fprintf(fout1, "\n");
+                fflush(fout1);
+                fprintf(fout1, "sym_prc samp %d max_correspondance %d tot_steps %d \n", samp, correspondance, t);
+                fflush(fout1);
                 break;
             }
             if (t == max_iter - 1)
@@ -146,18 +163,21 @@ int main(int argc, char *argv[])
         {
             generate_J(P, csi, J);
             //printing initial J matrix
-            fprintf(fout1, "unlearning samp %d unlearning_samp %d correspondance 0 step 0 of %d J ", samp, unlearning_samp, D_max); fflush(fout1);
+            fprintf(fout1, "unlearning samp %d unlearning_samp %d correspondance 0 step 0 of %d J ", samp, unlearning_samp, D_max);
+            fflush(fout1);
             for (int i = 0; i < N; i++)
             {
                 for (int j = i + 1; j < N; j++)
                 {
 
-                    fprintf(fout1, " %lf ", J[i][j]); fflush(fout1);
+                    fprintf(fout1, " %lf ", J[i][j]);
+                    fflush(fout1);
                 }
             }
-            fprintf(fout1, "\n"); fflush(fout1);
+            fprintf(fout1, "\n");
+            fflush(fout1);
 
-            correspondance=1;
+            correspondance = 1;
             for (int D = 0; D < D_max; D++)
             { //Dreaming..
                 generate_rand_initial(sigma);
@@ -167,34 +187,43 @@ int main(int argc, char *argv[])
 
                 if (D % (int)(10 * D_max / t) == 0 && D != 0 && D != D_max)
                 {
-                    fprintf(fout1, "unlearning samp %d unlearning_samp %d correspondance %d step %d of %d J ", samp, unlearning_samp, correspondance, D, D_max); fflush(fout1);
+                    fprintf(fout1, "unlearning samp %d unlearning_samp %d correspondance %d step %d of %d J ", samp, unlearning_samp, correspondance, D, D_max);
+                    fflush(fout1);
 
                     for (int i = 0; i < N; i++)
                     {
                         for (int j = i + 1; j < N; j++)
                         {
-                            fprintf(fout1, "%lf ", J[i][j]); fflush(fout1);
+                            fprintf(fout1, "%lf ", J[i][j]);
+                            fflush(fout1);
                         }
                     }
-                    fprintf(fout1, "\n"); fflush(fout1);
+                    fprintf(fout1, "\n");
+                    fflush(fout1);
                     correspondance++;
                 }
-                if (D == D_max-1)
+                if (D == D_max - 1)
                 {
-                    fprintf(fout1, "unlearning samp %d unlearning_samp %d correspondance %d step %d of %d J ", samp, unlearning_samp, correspondance, D, D_max-1); fflush(fout1);
+                    //compute_print_overlap(); //this is for debugging
+                    fprintf(fout1, "unlearning samp %d unlearning_samp %d correspondance %d step %d of %d J ", samp, unlearning_samp, correspondance, D, D_max - 1);
+                    fflush(fout1);
                     for (int i = 0; i < N; i++)
                     {
                         for (int j = i + 1; j < N; j++)
                         {
-                            fprintf(fout1, "%lf ", J[i][j]); fflush(fout1);
+                            fprintf(fout1, "%lf ", J[i][j]);
+                            fflush(fout1);
                         }
                     }
-                    fprintf(fout1, "\n"); fflush(fout1);
+                    fprintf(fout1, "\n");
+                    fflush(fout1);
                 }
             }
         }
     }
     fclose(fout1);
+    //fclose(fout2);
+
     return (0);
 }
 
@@ -203,7 +232,9 @@ void my_init()
 {
     max_iter = 1000;
     P = (int)(alpha * (double)N);
+    strenght=strenghtN/N;
     sigma = (int *)malloc(N * sizeof(int));
+    sigma_new = (int *)malloc(N * sizeof(int));
     csi = (int **)malloc(P * sizeof(int *));
     mask = (int **)malloc(P * sizeof(int *));
     J = (double **)malloc(N * sizeof(double *));
@@ -232,6 +263,11 @@ void my_init()
         printf("malloc of sigma array failed.\n");
         exit(EXIT_FAILURE);
     }
+    else if (sigma_new == NULL)
+    {
+        printf("malloc of sigma_new array failed.\n");
+        exit(EXIT_FAILURE);
+    }
 
     sprintf(string, "perceptronVSunlearning_trajectory_N%d_alpha%Lg_lambda%Lg_prcstab%Lg_Nsamp%d_unlearningSamp%d_seed%d.dat", N, alpha, lambda, c, N_samp, max_unlearning_samp, seed);
     fout1 = fopen(string, "w");
@@ -240,6 +276,15 @@ void my_init()
         printf("couldn't open fout1\n");
         exit(9);
     }
+
+/*
+    sprintf(string, "perceptronVSunlearning_trajectory_Overlapcheck.dat"); //this is for debugging
+    fout2 = fopen(string, "a");
+    if (fout2 == NULL)
+    {
+        printf("couldn't open fout2\n");
+        exit(9);
+    }*/
 }
 
 /******************************************/
@@ -292,6 +337,58 @@ void generate_J(int P, int **csi, double **J)
     }
 }
 
+/******************************************/
+void compute_print_overlap()
+{
+    long double Overlap = 0;
+    int initial_pattern;
+    for (int l = 0; l < 20; l++)
+    {
+        do
+        {
+            initial_pattern = (int)((lrand48() / (double)RAND_MAX) * P);
+        } while (initial_pattern == P);
+
+        initialize_sigma_to_pattern(sigma_new, csi, initial_pattern);
+        async_dynamics(sigma_new, J);
+        Overlap += overlap(csi, sigma_new, initial_pattern);
+    }
+    Overlap = Overlap / (double)20;
+    fprintf(fout2, "ave_recogniton_overlap %Lg \n", Overlap);
+}
+
+/******************************************/
+double overlap(int **csi, int *vec, int pattern)
+{ //computes overlap between pattern and a given vector
+
+    int i;
+    double m = 0;
+
+    for (i = 0; i < N; i++)
+    {
+        m = m + (double)csi[pattern][i] * (double)vec[i] / (double)N;
+    }
+    return m;
+}
+
+/******************************************/
+void initialize_sigma_to_pattern(int *sigma, int **csi, int pattern)
+{ //generate an initial configuration with an average distance from pattern given by p_in
+
+    int i, j;
+    long double p_in = 0;
+    for (i = 0; i < N; i++)
+    {
+        if ((lrand48() / (double)RAND_MAX) < p_in)
+        {
+            sigma[i] = (-1) * csi[pattern][i];
+        }
+        else
+        {
+            sigma[i] = csi[pattern][i];
+        }
+    }
+}
 /******************************************/
 double H(double **J, int *sigma)
 { //computes energy from Hopfield hamiltonian

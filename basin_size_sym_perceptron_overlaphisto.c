@@ -270,7 +270,8 @@ int main(int argc, char *argv[])
 		over[i] = (double *)malloc((int)(0.5 * N) * sizeof(double));
 	}
 	freq = (int **)malloc(((int)(0.5 * N) + 1) * sizeof(int *));
-	for(int i = 0; i < (int)(0.5 * N) + 1; i++){
+	for (int i = 0; i < (int)(0.5 * N) + 1; i++)
+	{
 		freq[i] = (int *)malloc((2 * N + 1) * sizeof(int));
 	}
 
@@ -327,45 +328,37 @@ int main(int argc, char *argv[])
 				}
 				J[i][i] = 0;
 			}
-			if (t == max_iter-1){printf("algorithm did not converge in %d iterations", max_iter); exit (1);}
+			if (t == max_iter - 1)
+			{
+				printf("algorithm did not converge in %d iterations", max_iter);
+				exit(1);
+			}
 		}
 
-		for (int l = 0; l < (int)(0.5 * N) +1; l++) //this was l < (int)(0.5*N)+1
+		for (int l = 0; l < (int)(0.5 * N) + 1; l++) //this was l < (int)(0.5*N)+1
 		{
-			sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
-			async_dynamics(sigma_new, J);
-			over[samp][l] = overlap(csi, sigma_new, initial_pattern);
+			for (int k = 0; k < 10; k++)
+			{ //this samples 10 overlaps for each l and sample
+				sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
+				async_dynamics(sigma_new, J);
+				freq[l][(int)((overlap(csi, sigma_new, initial_pattern) + 1) * (double)N)]++;
+			}
 		}
 	}
 
-	for (int l = 0; l < (int)(0.5 * N) + 1; l++)
+	for (int j = 0; j < (int)(0.5 * N) + 1; j++)
 	{
-		for(int i = 0; i < (int)(2 * N) + 1; i++){
-			freq[l][i] = 0;
-		}
-		double m = 0;
-		double sigma_m = 0;
-		for (int i = 0; i < N_samp; i++)
-		{
-			m = m + over[i][l] / (double)N_samp;
-			sigma_m = sigma_m + over[i][l] * over[i][l] / (double)N_samp;
-			freq[l][(int)((over[i][l] + 1)*(double)N)]++;
-			//printf("%lf\t%d\n", over[i][l], (int)(over[i][l] + 1)*N);
-		}
-	
-	}
-			
-	for(int j = 0; j < (int)(0.5 * N) + 1; j++){
 		fprintf(fout2, "%Lg\t", (long double)(j * 2 / (double)N));
 		fflush(fout2);
-		for(int i = 0; i < 2*N + 1; i++){
+		for (int i = 0; i < 2 * N + 1; i++)
+		{
 			fprintf(fout2, "%d\t", freq[j][i]);
 			fflush(fout2);
 		}
 		fprintf(fout2, "\n");
 		fflush(fout2);
 	}
-	
+
 	//fclose(fout1);
 	fclose(fout2);
 	return 0;

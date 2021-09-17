@@ -343,8 +343,8 @@ int main(int argc, char *argv[])
 	strenghtN = atof(argv[3]);
 	NORM_TYPE = argv[4];
 	N_samp = atoi(argv[5]);
-    delta_seed= atoi(argv[6]);
-	int seed = time(0)+delta_seed;
+	delta_seed = atoi(argv[6]);
+	int seed = time(0) + delta_seed;
 	srand48(seed);
 
 	char string1[150];
@@ -353,170 +353,150 @@ int main(int argc, char *argv[])
 	FILE *fout1;
 	fout1 = fopen(string1, "w");
 
-		int i, j, l, t, on;
-		int *sigma, **csi;
-		double **J;
+	int i, j, l, t, on;
+	int *sigma, **csi;
+	double **J;
 
+	double time1, time2, time_tot = 0, time_tott = 0;
 
-		double time1, time2, time_tot = 0, time_tott = 0;
-		
+	int P = (int)(alpha * (double)N);
+	double m, sigma_m;
+	double **over;
+	int **freq;
 
-		int P = (int)(alpha * (double)N);
-		double m, sigma_m;
-		double **over;
-		int **freq;
+	double Overlap;
+	int N_samp_over = 10;
 
-		double Overlap;
-		int N_samp_over = 10;
+	int N_samp_over_percept = 200;
+	int index_min, index_max, mu_min, mu_max, over_min, over_max;
 
-		int N_samp_over_percept = 200;
-		int index_min, index_max, mu_min, mu_max, over_min, over_max;
+	double Deps_measure[3];
+	char stringin[150];
+	sprintf(stringin, "Dpoints_N%d_a%Lg_e%Lg.dat", N, alpha, strenghtN);
+	FILE *take_D;
+	take_D = fopen(stringin, "r");
 
-		double Deps_measure[3];   			
-		char stringin[150];
-		sprintf(stringin, "Dpoints_N%d_a%Lg_e%Lg.dat", N, alpha, strenghtN);
-		FILE *take_D;
-		take_D = fopen(stringin, "r");
+	fscanf(take_D, "%lf\t%lf\t%lf\n", &Deps_measure[0], &Deps_measure[1], &Deps_measure[2]);
+	D_maxstrenght = Deps_measure[0] + 0.05;
+	double strenght = strenghtN / (long double)N;
+	int D, D_max = (int)(D_maxstrenght / strenght), D_in = (int)(Deps_measure[0] / strenght);
+	// Initialization of the main configuration/interaction arrays
 
-		fscanf(take_D, "%lf\t%lf\t%lf\n", &Deps_measure[0], &Deps_measure[1], &Deps_measure[2]);
-		D_maxstrenght = Deps_measure[0] + 0.05;
-		double strenght = strenghtN / (long double)N;
-		int D, D_max = (int)(D_maxstrenght / strenght), D_in = (int)(Deps_measure[0]/strenght);
-		// Initialization of the main configuration/interaction arrays
+	sigma = (int *)malloc(N * sizeof(int));
 
-		sigma = (int *)malloc(N * sizeof(int));
+	// Initialization of the main configuration/interaction arrays
+	sigma1 = (int *)malloc(N * sizeof(int));
+	if (sigma1 == NULL)
+	{
+		printf("malloc of sigma1 array failed.\n");
+	}
+	sigma2 = (int *)malloc(N * sizeof(int));
+	if (sigma2 == NULL)
+	{
+		printf("malloc of sigma2 array failed.\n");
+	}
+	sigma_new = (int *)malloc(N * sizeof(int));
+	if (sigma_new == NULL)
+	{
+		printf("malloc of sigma array failed.\n");
+	}
+	field = (double *)malloc(N * sizeof(double));
+	if (field == NULL)
+	{
+		printf("malloc of field array failed.\n");
+	}
 
-		// Initialization of the main configuration/interaction arrays
-		sigma1 = (int *)malloc(N * sizeof(int));
-		if (sigma1 == NULL)
-		{
-			printf("malloc of sigma1 array failed.\n");
-		}
-		sigma2 = (int *)malloc(N * sizeof(int));
-		if (sigma2 == NULL)
-		{
-			printf("malloc of sigma2 array failed.\n");
-		}
-		sigma_new = (int *)malloc(N * sizeof(int));
-		if (sigma_new == NULL)
-		{
-			printf("malloc of sigma array failed.\n");
-		}
-		field = (double *)malloc(N * sizeof(double));
-		if (field == NULL)
-		{
-			printf("malloc of field array failed.\n");
-		}
+	csi = (int **)malloc(P * sizeof(int *));
+	J = (double **)malloc(N * sizeof(double *));
+	for (i = 0; i < N; i++)
+	{
+		J[i] = (double *)malloc(N * sizeof(double));
+	}
+	for (i = 0; i < P; i++)
+	{
+		csi[i] = (int *)malloc(N * sizeof(int));
+	}
 
-	
+	if (J == NULL)
+	{
+		printf("malloc of J matrix failed.\n");
+		exit(EXIT_FAILURE);
+	}
+	else if (csi == NULL)
+	{
+		printf("malloc of csi matrix failed.\n");
+		exit(EXIT_FAILURE);
+	}
+	else if (sigma == NULL)
+	{
+		printf("malloc of sigma array failed.\n");
+		exit(EXIT_FAILURE);
+	}
 
-		csi = (int **)malloc(P * sizeof(int *));
-		J = (double **)malloc(N * sizeof(double *));
-		for (i = 0; i < N; i++)
-		{
-			J[i] = (double *)malloc(N * sizeof(double));
-		}
-		for (i = 0; i < P; i++)
-		{
-			csi[i] = (int *)malloc(N * sizeof(int));
-		}
-	
+	freq = (int **)malloc(((int)(0.5 * N) + 1) * sizeof(int *));
+	over = (double **)malloc(N_samp * sizeof(double *));
+	for (int i = 0; i < N_samp; i++)
+	{
+		over[i] = (double *)malloc(((int)(0.5 * N) + 1) * sizeof(double));
+	}
+	for (int i = 0; i < (int)(0.5 * N) + 1; i++)
+	{
+		freq[i] = (int *)malloc((2 * N + 1) * sizeof(int));
+	}
 
-		if (J == NULL)
-		{
-			printf("malloc of J matrix failed.\n");
-			exit(EXIT_FAILURE);
-		}
-		else if (csi == NULL)
-		{
-			printf("malloc of csi matrix failed.\n");
-			exit(EXIT_FAILURE);
-		}
-		else if (sigma == NULL)
-		{
-			printf("malloc of sigma array failed.\n");
-			exit(EXIT_FAILURE);
-		}
+	int initial_pattern = 0; //index of the test pattern with respect to the which we compute the overlap
 
-		freq = (int **)malloc(((int)(0.5 * N) + 1) * sizeof(int *));
-		over = (double **)malloc(N_samp * sizeof(double *));
-		for (int i = 0; i < N_samp; i++)
-		{
-			over[i] = (double *)malloc(((int)(0.5 * N) + 1) * sizeof(double));
-		}
-		for(int i = 0; i < (int)(0.5 * N) + 1; i++){
-			freq[i] = (int *)malloc((2 * N + 1) * sizeof(int));
-		}
+	for (int samp = 0; samp < N_samp; samp++)
+	{ //Repetition of the run over N_samp realizations of disorder
 
-		int initial_pattern = 0; //index of the test pattern with respect to the which we compute the overlap
+		generate_csi(P, csi);
+		generate_J(P, csi, J);
+		printf("alpha = %Lg\tsample #%d\n", alpha, samp + 1);
 
-		for (int samp = 0; samp < N_samp; samp++)
-		{ //Repetition of the run over N_samp realizations of disorder
-			
-			generate_csi(P, csi);
-			generate_J(P, csi, J);
-			printf("alpha = %Lg\tsample #%d\n", alpha, samp + 1);
-			
-			int t = 0;
+		int t = 0;
 
-			for (D = 0; D < D_max; D++)
-			{ //Dreaming..
-				//printf("Deps/N = %Lg\n", (long double)(D*strenght));
+		for (D = 0; D < D_max; D++)
+		{ //Dreaming..
+			//printf("Deps/N = %Lg\n", (long double)(D*strenght));
 
-				if (D > 0)
+			if (D > 0)
+			{
+				sigma = generate_rand_initial();
+				async_dynamics(sigma, J);
+				updateJ(J, sigma, strenght);
+				normalizeJ(NORM_TYPE, J);
+			}
+
+			if (D % D_in == 0 && D_in != 0)
+			{
+				// Initialization of the output files
+
+				for (int l = 0; l < (int)(0.5 * N) + 1; l++) //this was l < (int)(0.5*N)+1
 				{
-					sigma = generate_rand_initial();
-					async_dynamics(sigma, J);
-					updateJ(J, sigma, strenght);
-					normalizeJ(NORM_TYPE,J);
-				}
-
-				if (D % D_in == 0 && D_in != 0)
-				{ 
-					// Initialization of the output files
-
-					for (int l = 0; l < (int)(0.5 * N) + 1; l++) //this was l < (int)(0.5*N)+1
-					{
+					for (int k = 0; k < 10; k++)
+					{ //this samples 10 overlaps for each l and sample
 						sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
 						async_dynamics(sigma_new, J);
-						over[samp][l] = overlap(csi, sigma_new, initial_pattern);
-					}	
-
-					t++;
+						freq[l][(int)((overlap(csi, sigma_new, initial_pattern) + 1) * (double)N)]++;
+					}
 				}
-			
-			
+				t++;
 			}
-		
 		}
+	}
 
-		for (int l = 0; l < (int)(0.5 * N) + 1; l++)
+	for (int j = 0; j < (int)(0.5 * N) + 1; j++)
+	{
+		fprintf(fout1, "%Lg\t", (long double)(j * 2 / (double)N));
+		fflush(fout1);
+		for (int i = 0; i < 2 * N + 1; i++)
 		{
-			for(int i = 0; i < (int)(2 * N) + 1; i++){
-				freq[l][i] = 0;
-			}
-			double m = 0;
-			double sigma_m = 0;
-			for (int i = 0; i < N_samp; i++)
-			{
-				m = m + over[i][l] / (double)N_samp;
-				sigma_m = sigma_m + over[i][l] * over[i][l] / (double)N_samp;
-				freq[l][(int)((over[i][l] + 1)*(double)N)]++;
-				//printf("%d\n", (int)(over[i][l] + 1)*N);
-			}
-	
-		}
-			
-		for(int j = 0; j < (int)(0.5 * N) + 1; j++){
-			fprintf(fout1, "%Lg\t", (long double)(j * 2 / (double)N));
-			fflush(fout1);
-			for(int i = 0; i < 2*N + 1; i++){
-				fprintf(fout1, "%d\t", freq[j][i]);
-				fflush(fout1);
-			}
-			fprintf(fout1, "\n");
+			fprintf(fout1, "%d\t", freq[j][i]);
 			fflush(fout1);
 		}
+		fprintf(fout1, "\n");
+		fflush(fout1);
+	}
 
 	fclose(fout1);
 	return 0;
