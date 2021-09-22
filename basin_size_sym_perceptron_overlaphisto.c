@@ -144,7 +144,7 @@ void async_dynamics(int *sigma, double **J)
 			exit(-9);
 		}
 	}
-		for (int i = 0; i < N; i++)
+	for (int i = 0; i < N; i++)
 	{
 		double stab = 0;
 		for (int k = 0; k < N; k++)
@@ -219,13 +219,9 @@ int main(int argc, char *argv[])
 
 	char string[150], string2[150];
 
-	//sprintf(string, "sym_perceptron_basin_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d_seed%d.dat", N, alpha, lambda, c, N_samp, seed);
-	sprintf(string2, "sym_perceptron_overlaphisto_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d_seed%d.dat", N, alpha, lambda, c, N_samp, seed);
-
 	//FILE *fout1;
 	//fout1 = fopen(string, "w");
-	fout2 = fopen(string2, "w");
-
+	
 	int i;
 
 	P = (int)(alpha * (double)N);
@@ -288,7 +284,8 @@ int main(int argc, char *argv[])
 		freq[i] = (int *)malloc((2 * N + 1) * sizeof(int));
 	}
 
-	int initial_pattern = 0;
+	int pattern;
+	int skipped_samples =0;
 
 	for (int samp = 0; samp < N_samp; samp++)
 	{
@@ -341,23 +338,36 @@ int main(int argc, char *argv[])
 				}
 				J[i][i] = 0;
 			}
-			if (t == max_iter - 1)
-			{
-				printf("algorithm did not converge in %d iterations", max_iter);
-				exit(1);
-			}
 		}
+		if (skipped_samples == 11){
+			sprintf(string2, "sym_perceptron_overlaphisto_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d_seed%d_TOOMANYskipped_samps.dat", N, alpha, lambda, c, N_samp, seed);
+			fout2 = fopen(string2, "w");
+			fprintf(fout2,"doesn t make sense to keep trying");
+			fclose(fout2);
+			exit (9);
+		}
+		if (t == max_iter){skipped_samples++; samp--; continue;}
+
+
 
 		for (int l = 0; l < (int)(0.5 * N) + 1; l++) //this was l < (int)(0.5*N)+1
 		{
-			for (int k = 0; k < 10; k++)
+			for (int k = 0; k < 5; k++)
 			{ //this samples 10 overlaps for each l and sample
-				sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
+				do
+				{
+					pattern = (int)(rand() / RAND_MAX) * N;
+				} while (pattern == N);
+				sigma_new = generate_initial(csi, pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
 				async_dynamics(sigma_new, J);
-				freq[l][(int)((overlap(csi, sigma_new, initial_pattern) + 1) * (double)N)]++;
+				freq[l][(int)((overlap(csi, sigma_new, pattern) + 1) * (double)N)]++;
 			}
 		}
 	}
+
+	sprintf(string2, "sym_perceptron_overlaphisto_N%d_alpha%Lg_lambda%Lg_maxstab%Lg_Nsamp%d_seed%d_skipped_samps%d.dat", N, alpha, lambda, c, N_samp, seed,skipped_samples);
+	fout2 = fopen(string2, "w");
+
 
 	for (int j = 0; j < (int)(0.5 * N) + 1; j++)
 	{

@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
 				J[i][i] = 0;
 			}
 		}
-		if (t == max_iter-1){skipped_samples++; i--; continue;}
+		if (t == max_iter){skipped_samples++; samp--; continue;}
 
 		for (int l = 0; l < (int)(0.5 * N); l++) //this was l < (int)(0.5*N)+1
 		{

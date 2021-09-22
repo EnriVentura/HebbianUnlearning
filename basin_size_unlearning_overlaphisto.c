@@ -10,7 +10,7 @@
 #define T_MAX 1000000
 
 char *NORM_TYPE;
-int N, N_samp, delta_seed;
+int N, N_samp, n_samp_overlap = 10, delta_seed;
 long double alpha, strenghtN, D_maxstrenght;
 int *sigma1;
 int *sigma2;
@@ -18,8 +18,11 @@ int *sigma_new;
 double *field;
 int delta_seed;
 FILE *fout1;
-
-
+FILE *fout2;
+FILE *fout3;
+FILE *fout4;
+FILE *fout5;
+FILE *fout6;
 void generate_csi(int P, int **csi)
 { //generate memories as a bernoulli process with probability p
 	int i, j;
@@ -212,7 +215,7 @@ void async_dynamics(int *sigma, double **J)
 		//printf("time = %d\n", time);
 		if (time == 99999)
 		{
-			printf("ABORT async_dynamics did not converge/n");
+			fprintf(fout1, "ABORT async_dynamics did not converge/n");
 			exit(-9);
 		}
 	}
@@ -230,7 +233,6 @@ void async_dynamics(int *sigma, double **J)
 		}
 	}
 }
-
 
 double overlap(int **csi, int *vec, int pattern)
 { //computes overlap between pattern and a given vector
@@ -346,21 +348,15 @@ int main(int argc, char *argv[])
 	int seed = time(0) + delta_seed;
 	srand48(seed);
 
-	char string1[150];
-	sprintf(string1, "unlearning_overlaphisto_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
-
-	fout1 = fopen(string1, "w");
-
-	int i, j, l, t, on;
+	int i, j, l, t, on, pattern;
 	int *sigma, **csi;
 	double **J;
 
 	double time1, time2, time_tot = 0, time_tott = 0;
 
 	int P = (int)(alpha * (double)N);
-	double m, sigma_m;
-	double **over;
-	int **freq;
+	double m, m2;
+	int ***freq;
 
 	double Overlap;
 	int N_samp_over = 10;
@@ -375,7 +371,7 @@ int main(int argc, char *argv[])
 	take_D = fopen(stringin, "r");
 
 	fscanf(take_D, "%lf\t%lf\t%lf\n", &Deps_measure[0], &Deps_measure[1], &Deps_measure[2]);
-	D_maxstrenght = Deps_measure[0] + 0.05;
+	D_maxstrenght = Deps_measure[2] + 0.05;
 	double strenght = strenghtN / (long double)N;
 	int D, D_max = (int)(D_maxstrenght / strenght), D_in = (int)(Deps_measure[0] / strenght);
 	// Initialization of the main configuration/interaction arrays
@@ -397,11 +393,6 @@ int main(int argc, char *argv[])
 	if (sigma_new == NULL)
 	{
 		printf("malloc of sigma array failed.\n");
-	}
-	field = (double *)malloc(N * sizeof(double));
-	if (field == NULL)
-	{
-		printf("malloc of field array failed.\n");
 	}
 
 	csi = (int **)malloc(P * sizeof(int *));
@@ -431,18 +422,58 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	freq = (int **)malloc(((int)(0.5 * N) + 1) * sizeof(int *));
-	over = (double **)malloc(N_samp * sizeof(double *));
-	for (int i = 0; i < N_samp; i++)
+	freq = (int ***)malloc(3 * sizeof(int **));
+	for (int i = 0; i < 3; i++)
 	{
-		over[i] = (double *)malloc(((int)(0.5 * N) + 1) * sizeof(double));
+		freq[i] = (int **)malloc(((int)(0.5 * N) + 1) * sizeof(int *));
 	}
-	for (int i = 0; i < (int)(0.5 * N) + 1; i++)
+	for (int j = 0; j < 3; j++)
 	{
-		freq[i] = (int *)malloc((2 * N + 1) * sizeof(int));
+		for (int i = 0; i < (int)(0.5 * N) + 1; i++)
+		{
+			freq[j][i] = (int *)malloc((2 * N + 1) * sizeof(int));
+		}
 	}
 
-	int initial_pattern = 0; //index of the test pattern with respect to the which we compute the overlap
+	char string[100], string2[100], string3[100], string4[100], string5[100], string6[100];
+	if (strcmp(NORM_TYPE, "NO_NORM") == 0)
+	{
+		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string4, "unlearning_overlaphisto_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string5, "unlearning_overlaphisto_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string6, "unlearning_overlaphisto_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+	}
+	else if (strcmp(NORM_TYPE, "ROW_NORM") == 0)
+	{
+		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string4, "unlearning_overlaphisto_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string5, "unlearning_overlaphisto_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string6, "unlearning_overlaphisto_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+	}
+	else if (strcmp(NORM_TYPE, "TOT_NORM") == 0)
+	{
+		sprintf(string, "unlearningV2NONORM_basin_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string2, "unlearningV2NONORM_basin_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string3, "unlearningV2NONORM_basin_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string4, "unlearning_overlaphisto_Din_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string5, "unlearning_overlaphisto_Dopt_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+		sprintf(string6, "unlearning_overlaphisto_Dfin_N%d_alpha%Lg_strenghtN%Lg_Nsamp%d_seed%d.dat", N, alpha, strenghtN, N_samp, seed);
+	}
+	else
+	{
+		printf("please select a norm type: NO_NORM, ROW_NORM, TOT_NORM ");
+		exit(1);
+	}
+	fout1 = fopen(string, "w");
+	fout2 = fopen(string2, "w");
+	fout3 = fopen(string3, "w");
+	fout4 = fopen(string4, "w");
+	fout5 = fopen(string5, "w");
+	fout6 = fopen(string6, "w");
 
 	for (int samp = 0; samp < N_samp; samp++)
 	{ //Repetition of the run over N_samp realizations of disorder
@@ -465,17 +496,21 @@ int main(int argc, char *argv[])
 				normalizeJ(NORM_TYPE, J);
 			}
 
-			if (D % D_in == 0 && D_in != 0)
+			if (D > 0 && t < 3 && D % (int)(Deps_measure[t] / strenght) == 0)
 			{
-				// Initialization of the output files
-
-				for (int l = 0; l < (int)(0.5 * N)+1; l++) //this was l < (int)(0.5*N)+1
+				//printf("%d",t); //test
+				for (int l = 0; l < (int)(0.5 * N) + 1; l++) //this was l < (int)(0.5*N)+1
 				{
-					for (int k = 0; k < 10; k++)
+					for (int k = 0; k < n_samp_overlap; k++)
 					{ //this samples 10 overlaps for each l and sample
-						sigma_new = generate_initial(csi, initial_pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
+						do
+						{
+							pattern = (int)(rand() / RAND_MAX) * N;
+						} while (pattern == N);
+
+						sigma_new = generate_initial(csi, pattern, (1 - l * (double)(2 / (double)N)) * 0.5);
 						async_dynamics(sigma_new, J);
-						freq[l][(int)((overlap(csi, sigma_new, initial_pattern) + 1) * (double)N)]++;
+						freq[t][l][(int)((overlap(csi, sigma_new, pattern) + 1) * (double)N)]++;
 					}
 				}
 				t++;
@@ -483,19 +518,117 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	for (int j = 0; j < (int)(0.5 * N)+1; j++)
+	//printing
+	for (int t = 0; t < 3; t++)
 	{
-		fprintf(fout1, "%Lg\t", (long double)(j * 2 / (double)N));
-		fflush(fout1);
-		for (int i = 0; i < 2 * N +1; i++) //this was 2 * N + 1
+		if (t == 0)
 		{
-			fprintf(fout1, "%d\t", freq[j][i]);
-			fflush(fout1);
+			for (int j = 0; j < (int)(0.5 * N) + 1; j++)
+			{
+				m = 0;
+				m2 = 0;
+				for (int i = 0; i < (2 * N + 1); i++)
+				{
+					m += freq[t][j][i] * ((double)(i) / N - 1);
+					m2 += freq[t][j][i] * ((double)i / N - 1) * ((double)i / N - 1);
+				}
+				m /= n_samp_overlap * N_samp;
+
+				m2 /= n_samp_overlap * N_samp;
+				fprintf(fout1, "%Lg\t%lf\t%lf\n", (long double)(j * 2 / (double)N), m, sqrt((m2 - m * m) / (double)N_samp));
+				fflush(fout1);
+			}
 		}
-		fprintf(fout1, "\n");
-		fflush(fout1);
+		else if (t == 1)
+		{
+			for (int j = 0; j < (int)(0.5 * N) + 1; j++)
+			{
+				m = 0;
+				m2 = 0;
+				for (int i = 0; i < (2 * N + 1); i++)
+				{
+					m += freq[t][j][i] * ((double)(i) / N - 1);
+					m2 += freq[t][j][i] * ((double)i / N - 1) * ((double)i / N - 1);
+				}
+				m /= n_samp_overlap * N_samp;
+				m2 /= n_samp_overlap * N_samp;
+				fprintf(fout2, "%Lg\t%lf\t%lf\n", (long double)(j * 2 / (double)N), m, sqrt((m2 - m * m) / (double)N_samp));
+				fflush(fout2);
+			}
+		}
+		else if (t == 2)
+		{
+			for (int j = 0; j < (int)(0.5 * N) + 1; j++)
+			{
+				m = 0;
+				m2 = 0;
+				for (int i = 0; i < (2 * N + 1); i++)
+				{
+					m += freq[t][j][i] * ((double)(i) / N - 1);
+					m2 += freq[t][j][i] * ((double)i / N - 1) * ((double)i / N - 1);
+				}
+				m /= n_samp_overlap * N_samp;
+				m2 /= n_samp_overlap * N_samp;
+				fprintf(fout3, "%Lg\t%lf\t%lf\n", (long double)(j * 2 / (double)N), m, sqrt((m2 - m * m) / (double)N_samp));
+				fflush(fout3);
+			}
+		}
+	}
+
+	for (int t = 0; t < 3; t++)
+	{
+		if (t == 0)
+		{
+			for (int j = 0; j < (int)(0.5 * N) + 1; j++)
+			{
+				fprintf(fout4, "%Lg\t", (long double)(j * 2 / (double)N));
+				fflush(fout4);
+				for (int i = 0; i < 2 * N + 1; i++)
+				{
+					fprintf(fout4, "%d\t", freq[t][j][i]);
+					fflush(fout4);
+				}
+				fprintf(fout4, "\n");
+				fflush(fout4);
+			}
+		}
+		else if (t == 1)
+		{
+			for (int j = 0; j < (int)(0.5 * N) + 1; j++)
+			{
+				fprintf(fout5, "%Lg\t", (long double)(j * 2 / (double)N));
+				fflush(fout5);
+				for (int i = 0; i < 2 * N + 1; i++)
+				{
+					fprintf(fout5, "%d\t", freq[t][j][i]);
+					fflush(fout5);
+				}
+				fprintf(fout5, "\n");
+				fflush(fout5);
+			}
+		}
+		else if (t == 2)
+		{
+			for (int j = 0; j < (int)(0.5 * N) + 1; j++)
+			{
+				fprintf(fout6, "%Lg\t", (long double)(j * 2 / (double)N));
+				fflush(fout6);
+				for (int i = 0; i < 2 * N + 1; i++)
+				{
+					fprintf(fout6, "%d\t", freq[t][j][i]);
+					fflush(fout6);
+				}
+				fprintf(fout6, "\n");
+				fflush(fout6);
+			}
+		}
 	}
 
 	fclose(fout1);
+	fclose(fout2);
+	fclose(fout3);
+	fclose(fout4);
+	fclose(fout5);
+	fclose(fout6);
 	return 0;
 }
